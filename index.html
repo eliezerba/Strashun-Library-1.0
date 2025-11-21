@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>דשבורד ספריית שטרסון</title>
+
+  <!-- Bootstrap RTL -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Leaflet for map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+
+  <!-- Leaflet, Chart.js, D3, Bootstrap JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="data.js"></script>
+
+  <style>
+    :root {
+        --bs-body-bg: #f4f7f6;
+        --bs-primary-rgb: 86, 128, 233;
+        --bs-secondary-rgb: 108, 117, 125;
+    }
+
+    body {
+      font-family: 'Rubik', Arial, sans-serif; /* A more modern Hebrew-friendly font */
+    }
+
+    .main-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .main-header h1 {
+        font-weight: 700;
+    }
+
+    .nav-tabs .nav-link {
+        color: var(--bs-secondary);
+        font-weight: 500;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: var(--bs-primary);
+        border-color: var(--bs-primary);
+        background-color: transparent;
+    }
+    
+    .card {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        border: none;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .tab-pane {
+      padding-top: 1.5rem;
+    }
+
+    #map {
+      height: 500px;
+      border-radius: 0.5rem;
+      border: 1px solid #dee2e6;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+      padding: 1rem;
+    }
+
+    .search-link {
+      color: var(--bs-primary);
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .search-link:hover {
+        text-decoration: underline;
+    }
+
+    .network-container {
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      background-color: #ffffff;
+      overflow: hidden;
+    }
+
+      .network-label {
+        font-size: 10px;
+        pointer-events: none;
+        fill: #343a40;
+        paint-order: stroke;
+        stroke: #ffffff;
+        stroke-width: 2px;
+        stroke-linejoin: round;
+      }
+
+    #searchResults table {
+        font-size: 0.9rem;
+    }
+    
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #d4d4d4;
+      border-bottom: none;
+      border-top: none;
+      z-index: 99;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: #fff;
+    }
+    .autocomplete-items div {
+      padding: 10px;
+      cursor: pointer;
+      background-color: #fff; 
+      border-bottom: 1px solid #d4d4d4; 
+    }
+    .autocomplete-items div:hover {
+      background-color: #e9e9e9; 
+    }
+    .autocomplete-active {
+      background-color: DodgerBlue !important; 
+      color: #ffffff; 
+    }
+  </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+    <header class="main-header text-center">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div class="text-start">
+          <img src="logo.png" alt="לוגו המעבדה" style="height:64px; max-width:180px; object-fit:contain;">
+        </div>
+        <div class="flex-grow-1 text-center mt-3 mt-md-0">
+          <h1 class="mb-1">דשבורד ספריית שטרסון</h1>
+          <p class="lead mb-0">
+            ניתוח ויזואלי של פנקסי ההשאלה וקטלוג הספרים ההיסטורי
+          </p>
+        </div>
+        <div class="d-none d-md-block" style="width:180px;"></div>
+      </div>
+    </header>
+    
+    <!-- Tabs -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <ul class="nav nav-tabs card-header-tabs" id="mainTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">
+                  <i class="bi bi-search"></i> חיפוש
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapTab" type="button" role="tab">
+                  <i class="bi bi-map"></i> מפת הוצאה לאור
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button" role="tab">
+                  <i class="bi bi-bar-chart-line"></i> מדדים כלליים
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="network-tab" data-bs-toggle="tab" data-bs-target="#network" type="button" role="tab">
+                  <i class="bi bi-diagram-3"></i> רשת קוראים
+                </button>
+              </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="mainTabsContent">
+              <!-- Search tab -->
+              <div class="tab-pane fade show active" id="search" role="tabpanel" aria-labelledby="search-tab">
+                <div class="row g-3 align-items-center">
+                  <div class="col-md-6">
+                    <div class="input-group" style="position: relative;">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input id="searchInput" type="text" class="form-control" placeholder="הקלד/י שם ספר או שם שואל..." autocomplete="off"/>
+                        <div id="autocomplete-list" class="autocomplete-items"></div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <button id="searchBtn" class="btn btn-primary w-100">חפש/י</button>
+                  </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                        <label class="form-label">סינון לפי מגדר:</label>
+                        <div class="btn-group w-100">
+                            <input type="radio" class="btn-check" name="genderFilter" id="genderAll" value="all" checked>
+                            <label class="btn btn-outline-secondary" for="genderAll">הכל</label>
+                            <input type="radio" class="btn-check" name="genderFilter" id="genderM" value="M">
+                            <label class="btn btn-outline-secondary" for="genderM">גברים</label>
+                            <input type="radio" class="btn-check" name="genderFilter" id="genderF" value="F">
+                            <label class="btn btn-outline-secondary" for="genderF">נשים</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="yearFilter" class="form-label">סינון לפי שנה:</label>
+                        <input type="text" id="yearFilter" class="form-control" placeholder="לדוגמה: 1930-1940 או 1955">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">סינון לפי סוג ספר:</label>
+                        <div class="btn-group w-100">
+                            <input type="radio" class="btn-check" name="bookTypeFilter" id="bookTypeAll" value="all" checked>
+                            <label class="btn btn-outline-secondary" for="bookTypeAll">הכל</label>
+                            <input type="radio" class="btn-check" name="bookTypeFilter" id="bookTypeBook" value="book">
+                            <label class="btn btn-outline-secondary" for="bookTypeBook">ספרים</label>
+                             <input type="radio" class="btn-check" name="bookTypeFilter" id="bookTypeJournal" value="journal">
+                            <label class="btn btn-outline-secondary" for="bookTypeJournal">כתבי עת</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="searchInfo" class="mt-3 text-muted"></div>
+                <hr class="my-4"/>
+                <div id="searchResults"></div>
+              </div>
+
+              <!-- Map tab -->
+              <div class="tab-pane fade" id="mapTab" role="tabpanel" aria-labelledby="map-tab">
+                <p class="text-muted">
+                  המפה מציגה את המקומות העיקריים של דפוס/הוצאה לאור לפי קטלוג הספרים. רק חלק מן המקומות ממוקמים גאוגרפית במדויק.
+                </p>
+                <div class="card">
+                    <div id="map"></div>
+                </div>
+              </div>
+
+              <!-- Metrics tab -->
+              <div class="tab-pane fade" id="metrics" role="tabpanel" aria-labelledby="metrics-tab">
+                <div class="row">
+                  <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body chart-container">
+                            <h5 class="card-title text-center">השואלים המובילים</h5>
+                            <canvas id="topBorrowersChart"></canvas>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body chart-container">
+                            <h5 class="card-title text-center">הנשים השואלות המובילות</h5>
+                            <canvas id="topFemaleBorrowersChart"></canvas>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body chart-container">
+                            <h5 class="card-title text-center">הספרים הנשאלים ביותר</h5>
+                            <canvas id="topBooksChart"></canvas>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body chart-container">
+                            <h5 class="card-title text-center">כתבי העת הנשאלים ביותר</h5>
+                            <canvas id="topJournalsChart"></canvas>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Network tab -->
+              <div class="tab-pane fade" id="network" role="tabpanel" aria-labelledby="network-tab">
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">הגדרות תצוגה</h5>
+                            
+                            <label for="colorSelect" class="form-label">צביעה לפי:</label>
+                            <select id="colorSelect" class="form-select mb-3">
+                              <option value="gender">מגדר</option>
+                              <option value="community">קהילה (Community)</option>
+                            </select>
+
+                            <label for="centralitySelect" class="form-label">גודל (מדד מרכזיות):</label>
+                            <select id="centralitySelect" class="form-select mb-3">
+                              <option value="value">מספר ספרים ייחודיים</option>
+                              <option value="degree">Degree</option>
+                              <option value="weightedDegree">Weighted degree</option>
+                            </select>
+
+                            <div class="form-check form-switch mb-2">
+                              <input class="form-check-input" type="checkbox" id="egoIncludeBooks" checked>
+                              <label class="form-check-label" for="egoIncludeBooks">הצג גם ספרים ברשת אגו</label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                              <input class="form-check-input" type="checkbox" id="showNetworkLabels">
+                              <label class="form-check-label" for="showNetworkLabels">הצג שמות על הרשת</label>
+                            </div>
+                            
+                            <hr>
+                            <h6 class="card-subtitle mb-2 text-muted">רשת אגו</h6>
+                            <div class="input-group mb-3">
+                               <input type="text" id="networkSearchInput" class="form-control" placeholder="חפש שם..." autocomplete="off">
+                               <button class="btn btn-outline-secondary" type="button" id="resetNetworkBtn"><i class="bi bi-x-lg"></i></button>
+                            </div>
+                            <div id="networkAutocomplete" class="autocomplete-items" style="position:relative; top:0;"></div>
+
+                            <hr>
+                            <div id="legendContainer"></div>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="col-md-9">
+                    <div id="networkContainer" class="network-container" style="height: 600px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="mt-3 alert alert-info" role="alert">
+      טוען נתונים...
+    </div>
+    <div id="errorBox" class="mt-3 alert alert-danger d-none" role="alert"></div>
+  </div>
+
+<script>
+  let allFolders = [];
+  let fullBooks = [];
+  let borrowers = [];
+  let metrics = null;
+  let network = null;
+  let mapInstance = null;
+
+  // Lookups
+  let bookByNli = {};
+  let borrowerByName = {};
+  let uniquePersonNames = [];
+  let uniqueBookNames = [];
+
+  async function loadData() {
+    try {
+      if (!window.dashboardData) {
+         throw new Error('נתונים לא נמצאו. ודא שקובץ data.js קיים ונטען בהצלחה.');
+      }
+
+      allFolders = window.dashboardData.allFolders || [];
+      fullBooks = window.dashboardData.fullBookList || [];
+      borrowers = window.dashboardData.borrowers || [];
+      metrics = window.dashboardData.metrics || {};
+      network = window.dashboardData.network || {};
+
+      buildLookups();
+      initSearch();
+      initMetricsCharts();
+      initMap();
+      initNetwork();
+
+      // Re-render network when tab is shown to fix sizing issues
+      const networkTabEl = document.querySelector('button[data-bs-target="#network"]');
+      if (networkTabEl) {
+        networkTabEl.addEventListener('shown.bs.tab', function (event) {
+            // If network hasn't been drawn or size is wrong, redraw
+            if (networkG) {
+                updateNetworkData(null); // Redraw to fit container
+            }
+        });
+      }
+
+        // Re-render map when tab is shown to fix sizing issues
+        const mapTabEl = document.querySelector('button[data-bs-target="#mapTab"]');
+      if (mapTabEl) {
+        mapTabEl.addEventListener('shown.bs.tab', function (event) {
+            if (mapInstance) {
+                mapInstance.invalidateSize();
+            }
+        });
+      }
+
+      document.getElementById('loading').classList.add('d-none');
+    } catch (err) {
+      console.error(err);
+      const errorBox = document.getElementById('errorBox');
+      errorBox.textContent = 'שגיאה בטעינת הנתונים: ' + err.message;
+      errorBox.classList.remove('d-none');
+      document.getElementById('loading').classList.add('d-none');
+    }
+  }
+
+  function buildLookups() {
+    bookByNli = {};
+    fullBooks.forEach(b => {
+      const id = (b['nli_id'] || '').trim();
+      if (id) {
+        bookByNli[id] = b;
+      }
+    });
+
+    const personNames = new Set();
+    const bookNames = new Set();
+    borrowerByName = {};
+    borrowers.forEach(b => {
+      const name = (b["person's name"] || '').trim();
+      if (name) {
+        borrowerByName[name] = b;
+        personNames.add(name);
+      }
+    });
+    
+    allFolders.forEach(rec => {
+        const bookName = (rec["book name"] || "").trim();
+        if(bookName) bookNames.add(bookName);
+    });
+
+    uniquePersonNames = Array.from(personNames);
+    uniqueBookNames = Array.from(bookNames);
+  }
+
+  // ---------- Search ----------
+
+  function initSearch() {
+    const btn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchInput');
+    
+    btn.addEventListener('click', () => {
+      runSearch(searchInput.value.trim());
+    });
+
+    searchInput.addEventListener('keyup', (ev) => {
+      if (ev.key === 'Enter') {
+        runSearch(ev.target.value.trim());
+      }
+    });
+    
+    initAutocomplete(searchInput);
+    
+    // Add event listeners to filters
+    document.querySelectorAll('input[name="genderFilter"], input[name="bookTypeFilter"], #yearFilter').forEach(el => {
+        el.addEventListener('change', () => runSearch(searchInput.value.trim()));
+    });
+  }
+
+  function runSearch(query) {
+    const resultsDiv = document.getElementById('searchResults');
+    const infoDiv = document.getElementById('searchInfo');
+    resultsDiv.innerHTML = '';
+    
+    const lowerQuery = query.toLowerCase();
+    
+    // Get filter values
+    const genderFilter = document.querySelector('input[name="genderFilter"]:checked').value;
+    const yearFilter = document.getElementById('yearFilter').value.trim();
+    const bookTypeFilter = document.querySelector('input[name="bookTypeFilter"]:checked').value;
+
+    let [yearStart, yearEnd] = [null, null];
+    if (yearFilter.includes('-')) {
+        [yearStart, yearEnd] = yearFilter.split('-').map(y => parseInt(y.trim(), 10));
+    } else if (yearFilter) {
+        yearStart = yearEnd = parseInt(yearFilter, 10);
+    }
+
+    const personMatches = new Set();
+    const bookMatches = new Set();
+
+    allFolders.forEach(rec => {
+      const person = (rec["person's name"] || '').trim();
+      const book = (rec["book name"] || '').trim();
+      const year = parseInt(rec['year'], 10);
+
+      let yearMatch = true;
+      if (yearStart && yearEnd && !isNaN(year)) {
+          yearMatch = year >= yearStart && year <= yearEnd;
+      }
+
+      if (person && yearMatch && (!query || person.toLowerCase().includes(lowerQuery))) {
+          const borrowerDetails = borrowerByName[person];
+          if (!genderFilter || genderFilter === 'all' || (borrowerDetails && borrowerDetails.gender === genderFilter)) {
+            personMatches.add(person);
+          }
+      }
+      
+      if (book && yearMatch && (!query || book.toLowerCase().includes(lowerQuery))) {
+          const isJournal = (book.toLowerCase().includes('כרך') || book.toLowerCase().includes('חוברת'));
+          if (bookTypeFilter === 'all' || (bookTypeFilter === 'journal' && isJournal) || (bookTypeFilter === 'book' && !isJournal)) {
+            bookMatches.add(book);
+          }
+      }
+    });
+
+    const personsArr = Array.from(personMatches);
+    const booksArr = Array.from(bookMatches);
+
+    if (personsArr.length === 1 && booksArr.length === 0 && query) {
+      showPersonDetails(personsArr[0]);
+      infoDiv.textContent = `מציג פרטים עבור: ${personsArr[0]}`;
+      return;
+    }
+    if (booksArr.length === 1 && personsArr.length === 0 && query) {
+      showBookDetails(booksArr[0]);
+      infoDiv.textContent = `מציג פרטים עבור: ${booksArr[0]}`;
+      return;
+    }
+
+    infoDiv.textContent =
+      `נמצאו ${personsArr.length} שואלים ו-${booksArr.length} ספרים. בחר/י פריט מהרשימה להצגת פרטים.`;
+
+    const createList = (items, handler) => {
+        if (items.length === 0) return '<li class="list-group-item">אין תוצאות</li>';
+        return items.slice(0, 100).map(name =>
+            `<li class="list-group-item list-group-item-action" style="cursor:pointer;" onclick="${handler}('${escapeHtml(name)}')">${escapeHtml(name)}</li>`
+        ).join('');
+    };
+
+    resultsDiv.innerHTML = `
+      <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header fw-bold">שואלים (${personsArr.length})</div>
+                <ul class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">${createList(personsArr, 'showPersonDetails')}</ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header fw-bold">ספרים (${booksArr.length})</div>
+                <ul class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">${createList(booksArr, 'showBookDetails')}</ul>
+            </div>
+        </div>
+      </div>`;
+  }
+
+  function showPersonDetails(name) {
+    const resultsDiv = document.getElementById('searchResults');
+    const cleanName = name.trim();
+    const personLoans = allFolders.filter(rec => (rec["person's name"] || '').trim() === cleanName);
+    const borrowerInfo = borrowerByName[cleanName];
+
+    const bookCounts = personLoans.reduce((acc, rec) => {
+      const bn = (rec["book name"] || '').trim();
+      if (bn) acc[bn] = (acc[bn] || 0) + 1;
+      return acc;
+    }, {});
+
+    const bookRows = Object.entries(bookCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([bn, count]) => `<tr><td><span class="search-link" onclick="showBookDetails('${escapeHtml(bn)}')">${escapeHtml(bn)}</span></td><td>${count}</td></tr>`)
+      .join('');
+
+    const loansRows = personLoans.map(rec => {
+      const bname = escapeHtml((rec["book name"] || '').trim());
+      return `<tr>
+        <td><span class="search-link" onclick="showBookDetails('${escapeHtml(bname)}')">${bname}</span></td>
+        <td>${escapeHtml((rec['year'] || '').toString())}</td>
+        <td>${escapeHtml((rec['date'] || '').toString())}</td>
+        <td>${escapeHtml((rec['Folder'] || '').toString())}</td>
+        <td>${escapeHtml((rec['nli_id'] || '').toString())}</td>
+      </tr>`;
+    }).join('');
+
+    const cardHtml = borrowerInfo ? `
+      <div class="card mb-4">
+        <div class="card-body">
+          <h4 class="card-title">${escapeHtml(cleanName)}</h4>
+          <div class="row">
+            <div class="col-md-4"><strong>מגדר:</strong> ${escapeHtml(borrowerInfo['gender'] || 'לא ידוע')}</div>
+            <div class="col-md-4"><strong>סך השאלות:</strong> ${escapeHtml(String(borrowerInfo['number of borrowed books'] || '0'))}</div>
+            <div class="col-md-4"><strong>ספרים ייחודיים:</strong> ${escapeHtml(String(borrowerInfo['Unique number of borrowed books'] || '0'))}</div>
+          </div>
+        </div>
+      </div>` : '';
+
+    resultsDiv.innerHTML = `
+      ${cardHtml}
+      <div class="row">
+        <div class="col-md-5">
+          <div class="card">
+            <div class="card-header"><h5>ספרים ששאל/ה</h5></div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+              <table class="table table-sm table-hover">
+                <thead><tr><th>שם הספר</th><th>השאלות</th></tr></thead>
+                <tbody>${bookRows || '<tr><td colspan="2">אין נתונים</td></tr>'}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-7">
+          <div class="card">
+            <div class="card-header"><h5>כל רשומות ההשאלה</h5></div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+              <table class="table table-sm table-hover">
+                <thead><tr><th>שם הספר</th><th>שנה</th><th>תאריך</th><th>תיקייה</th><th>NLI ID</th></tr></thead>
+                <tbody>${loansRows || '<tr><td colspan="5">אין נתונים</td></tr>'}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+  window.showPersonDetails = showPersonDetails;
+
+  function showBookDetails(bookName) {
+    const resultsDiv = document.getElementById('searchResults');
+    const cleanName = bookName.trim();
+    const loans = allFolders.filter(rec => (rec["book name"] || '').trim() === cleanName);
+
+    let bookInfo = null;
+    const nliIdFromLoans = loans.find(rec => (rec['nli_id'] || '').trim())?.['nli_id']?.trim();
+    if (nliIdFromLoans && bookByNli[nliIdFromLoans]) {
+        bookInfo = bookByNli[nliIdFromLoans];
+    }
+
+    const borrowersCounts = loans.reduce((acc, rec) => {
+      const p = (rec["person's name"] || '').trim();
+      if (p) acc[p] = (acc[p] || 0) + 1;
+      return acc;
+    }, {});
+
+    const borrowersRows = Object.entries(borrowersCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([p, count]) => `<tr>
+          <td><span class="search-link" onclick="showPersonDetails('${escapeHtml(p)}')">${escapeHtml(p)}</span></td>
+          <td>${count}</td>
+        </tr>`
+      ).join('');
+
+    const loansRows = loans.map(rec => {
+      const person = escapeHtml((rec["person's name"] || '').trim());
+      return `<tr>
+        <td><span class="search-link" onclick="showPersonDetails('${escapeHtml(person)}')">${person}</span></td>
+        <td>${escapeHtml((rec['year'] || '').toString())}</td>
+        <td>${escapeHtml((rec['date'] || '').toString())}</td>
+        <td>${escapeHtml((rec['Folder'] || '').toString())}</td>
+      </tr>`;
+    }).join('');
+
+    let cardHtml = '';
+    if (bookInfo) {
+      const {
+        'nli_id': nliId = '',
+        'nli_title': nliTitle = '',
+        'language_nli': lang = '',
+        'publisher_nli': publisher = '',
+        'subject - clean': subjectClean = '',
+        'subject - nli': subjectNli = '',
+        'link_to_nli_page': link = ''
+      } = bookInfo;
+      const subject = subjectClean || subjectNli;
+
+      cardHtml = `
+        <div class="card mb-4">
+          <div class="card-body">
+            <h4 class="card-title">${escapeHtml(cleanName)}</h4>
+            ${nliTitle ? `<p class="card-text mb-1"><strong>כותר ב-NLI:</strong> ${escapeHtml(nliTitle)}</p>` : ''}
+            <div class="row mt-2">
+                ${lang ? `<div class="col-md-4"><strong>שפה:</strong> ${escapeHtml(lang)}</div>` : ''}
+                ${publisher ? `<div class="col-md-8"><strong>מקום הוצאה/מו"ל:</strong> ${escapeHtml(publisher)}</div>` : ''}
+                ${subject ? `<div class="col-md-8 mt-1"><strong>נושא:</strong> ${escapeHtml(subject)}</div>` : ''}
+                ${nliId ? `<div class="col-md-4 mt-1"><strong>NLI ID:</strong> ${escapeHtml(nliId.trim())}</div>` : ''}
+            </div>
+            ${link ? `<a href="${escapeHtml(link)}" target="_blank" class="btn btn-outline-primary btn-sm mt-3">עמוד הספר בספרייה הלאומית <i class="bi bi-box-arrow-up-right"></i></a>` : ''}
+          </div>
+        </div>`;
+    } else {
+         cardHtml = `<div class="card mb-4"><div class="card-body"><h4 class="card-title">${escapeHtml(cleanName)}</h4><p class="text-muted">לא נמצא מידע נוסף על ספר זה בקטלוג.</p></div></div>`;
+    }
+
+    resultsDiv.innerHTML = `
+      ${cardHtml}
+      <div class="row">
+        <div class="col-md-5">
+          <div class="card">
+            <div class="card-header"><h5>שואלים של הספר</h5></div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+              <table class="table table-sm table-hover">
+                <thead><tr><th>שם השואל</th><th>השאלות</th></tr></thead>
+                <tbody>${borrowersRows || '<tr><td colspan="2">אין נתונים</td></tr>'}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-7">
+          <div class="card">
+            <div class="card-header"><h5>כל רשומות ההשאלה</h5></div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+              <table class="table table-sm table-hover">
+                <thead><tr><th>שם השואל</th><th>שנה</th><th>תאריך</th><th>תיקייה</th></tr></thead>
+                <tbody>${loansRows || '<tr><td colspan="4">אין נתונים</td></tr>'}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+  window.showBookDetails = showBookDetails;
+
+  function escapeHtml(text) {
+    if (typeof text !== 'string') return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+  
+  function initAutocomplete(inp) {
+      let currentFocus;
+      inp.addEventListener("input", function(e) {
+          let a, b, i, val = this.value;
+          closeAllLists();
+          if (!val || val.length < 2) { return false;}
+          currentFocus = -1;
+          a = document.getElementById("autocomplete-list");
+          
+          const combined = [...uniquePersonNames, ...uniqueBookNames];
+          const filtered = combined.filter(item => item.toLowerCase().includes(val.toLowerCase())).slice(0, 10);
+
+          filtered.forEach(item => {
+              b = document.createElement("DIV");
+              b.innerHTML = "<strong>" + item.substr(0, val.length) + "</strong>";
+              b.innerHTML += item.substr(val.length);
+              b.innerHTML += "<input type='hidden' value='" + escapeHtml(item) + "'>";
+              b.addEventListener("click", function(e) {
+                  inp.value = this.getElementsByTagName("input")[0].value;
+                  closeAllLists();
+                  runSearch(inp.value);
+              });
+              a.appendChild(b);
+          });
+      });
+      
+      function closeAllLists(elmnt) {
+          const x = document.getElementsByClassName("autocomplete-items");
+          for (let i = 0; i < x.length; i++) {
+              if (elmnt != x[i] && elmnt != inp) {
+                  x[i].innerHTML = "";
+              }
+          }
+      }
+      document.addEventListener("click", function (e) {
+          closeAllLists(e.target);
+      });
+  }
+
+  // ---------- Metrics ----------
+
+  function initMetricsCharts() {
+    if (!metrics) return;
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                titleFont: { size: 14 },
+                bodyFont: { size: 12 },
+            }
+        },
+        scales: {
+            x: { 
+                ticks: { 
+                    autoSkip: false, 
+                    maxRotation: 45, 
+                    minRotation: 45,
+                    font: { size: 10 }
+                },
+                grid: { display: false }
+            },
+            y: { 
+                beginAtZero: true,
+                grid: { color: '#e9ecef' }
+            }
+        },
+        layout: {
+            padding: 10
+        }
+    };
+
+    const createBarChart = (canvasId, data, labelKey, valueKey, chartLabel, color) => {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(item => item[labelKey]),
+                datasets: [{
+                    label: chartLabel,
+                    data: data.map(item => item[valueKey]),
+                    backgroundColor: color,
+                    borderRadius: 4,
+                    barPercentage: 0.7
+                }]
+            },
+            options: chartOptions
+        });
+    };
+
+    createBarChart('topBorrowersChart', metrics.top_borrowers || [], "person's name", "number of borrowed books", 'מספר השאלות', 'rgba(86, 128, 233, 0.7)');
+    createBarChart('topFemaleBorrowersChart', metrics.top_female_borrowers || [], "person's name", "number of borrowed books", 'מספר השאלות', 'rgba(232, 62, 140, 0.7)');
+    createBarChart('topBooksChart', metrics.top_books || [], 'book name', 'count', 'מספר השאלות', 'rgba(25, 135, 84, 0.7)');
+    createBarChart('topJournalsChart', metrics.top_journals || [], 'book name', 'count', 'מספר השאלות', 'rgba(255, 193, 7, 0.7)');
+  }
+
+  // ---------- Map ----------
+
+  function initMap() {
+    if (!metrics || !document.getElementById('map')) return;
+    if (mapInstance) mapInstance.remove();
+
+    mapInstance = L.map('map').setView([51.5, 24], 4); // Centered on Eastern Europe
+
+    // Simple, openly available OSM tiles for offline-friendly use
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      minZoom: 2,
+      maxZoom: 18
+    }).addTo(mapInstance);
+
+    const placeCounts = (metrics.place_counts || []).filter(p => p.place && String(p.place).trim().toLowerCase() !== 'nan');
+
+    const cityCoords = {
+      'berlin': [52.52, 13.405], 'ברלין': [52.52, 13.405],
+      'vilna': [54.6872, 25.28], 'vilnius': [54.6872, 25.28], 'ווילנא': [54.6872, 25.28], 'ווילנע': [54.6872, 25.28],
+      'warsaw': [52.2297, 21.0122], 'warszawa': [52.2297, 21.0122], 'ווארשא': [52.2297, 21.0122], 'ווארשה': [52.2297, 21.0122], 'ווארשע': [52.2297, 21.0122],
+      'wien': [48.2082, 16.3738], 'wiem': [48.2082, 16.3738], 'ווין': [48.2082, 16.3738],
+      'amsterdam': [52.3676, 4.9041], 'אמסטרדם': [52.3676, 4.9041], 'אמשטירדם': [52.3676, 4.9041],
+      'padova': [45.4064, 11.8768], 'padua': [45.4064, 11.8768],
+      'krakau': [50.0647, 19.945], 'קראקא': [50.0647, 19.945],
+      'lemberg': [49.8397, 24.0297], 'lwow': [49.8397, 24.0297], 'לבוב': [49.8397, 24.0297],
+      'venezia': [45.4408, 12.3155], 'venice': [45.4408, 12.3155], 'וויניציאה': [45.4408, 12.3155],
+      'frankfurt': [50.1109, 8.6821], 'פרנקפורט': [50.1109, 8.6821],
+      'prague': [50.0755, 14.4378], 'פראג': [50.0755, 14.4378],
+      'paris': [48.8566, 2.3522], 'פריז': [48.8566, 2.3522],
+      'london': [51.5074, -0.1278], 'לונדון': [51.5074, -0.1278]
+    };
+
+    const markers = L.markerClusterGroup();
+
+    placeCounts.forEach(p => {
+      const rawPlace = String(p.place).trim();
+      const key = rawPlace.toLowerCase();
+      const coords = cityCoords[key];
+      if (!coords) return;
+
+      const count = p.count || 0;
+      const marker = L.marker(coords);
+      marker.bindPopup(`<b>${escapeHtml(rawPlace)}</b><br/>מספר כותרים: ${count}`);
+      markers.addLayer(marker);
+    });
+    mapInstance.addLayer(markers);
+  }
+
+  // ---------- Network ----------
+
+  let networkSimulation = null;
+  let networkSvg = null;
+  let networkG = null;
+  let currentNetworkData = { nodes: [], links: [] };
+
+  function initNetwork() {
+    if (!network) return;
+
+    // Setup controls listeners
+    const colorSelect = document.getElementById('colorSelect');
+    const centralitySelect = document.getElementById('centralitySelect');
+    const searchInput = document.getElementById('networkSearchInput');
+    const resetBtn = document.getElementById('resetNetworkBtn');
+
+    // Remove old listeners to avoid duplicates if init called multiple times
+    const newColorSelect = colorSelect.cloneNode(true);
+    colorSelect.parentNode.replaceChild(newColorSelect, colorSelect);
+    newColorSelect.addEventListener('change', () => updateNetworkViz());
+
+    const newCentralitySelect = centralitySelect.cloneNode(true);
+    centralitySelect.parentNode.replaceChild(newCentralitySelect, centralitySelect);
+    newCentralitySelect.addEventListener('change', () => updateNetworkViz());
+
+    const newResetBtn = resetBtn.cloneNode(true);
+    resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+    newResetBtn.addEventListener('click', () => {
+        document.getElementById('networkSearchInput').value = '';
+        updateNetworkData(null);
+    });
+
+    // Network Autocomplete (ego options: people / books / both)
+    initNetworkAutocomplete(searchInput);
+
+    // Initial Draw
+    updateNetworkData(null);
+  }
+
+    function initNetworkAutocomplete(inp) {
+      let currentFocus;
+      inp.addEventListener("input", function(e) {
+        let a, b, val = this.value;
+        closeAllLists();
+        if (!val) { return false;}
+        currentFocus = -1;
+        a = document.getElementById("networkAutocomplete");
+          
+        const filtered = network.nodes
+          .filter(n => (n.label || '').toLowerCase().includes(val.toLowerCase()))
+          .slice(0, 12);
+
+        filtered.forEach(item => {
+          b = document.createElement("DIV");
+          b.innerHTML = "<strong>" + item.label.substr(0, val.length) + "</strong>";
+          b.innerHTML += item.label.substr(val.length);
+          b.innerHTML += "<input type='hidden' value='" + escapeHtml(item.label) + "'>";
+          b.addEventListener("click", function(e) {
+            inp.value = this.getElementsByTagName("input")[0].value;
+            closeAllLists();
+            updateNetworkData(item.id);
+          });
+          a.appendChild(b);
+        });
+      });
+      
+      function closeAllLists(elmnt) {
+        const x = document.getElementById("networkAutocomplete");
+        if (elmnt != x && elmnt != inp) {
+          x.innerHTML = "";
+        }
+      }
+      document.addEventListener("click", function (e) {
+        closeAllLists(e.target);
+      });
+    }
+
+  function updateNetworkData(egoNodeId) {
+      const container = document.getElementById('networkContainer');
+      const width = container.clientWidth || 800;
+      const height = container.clientHeight || 600;
+
+      container.innerHTML = ''; 
+      
+      networkSvg = d3.select('#networkContainer')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('viewBox', [-width / 2, -height / 2, width, height])
+        .call(d3.zoom().on("zoom", function (event) {
+           networkG.attr("transform", event.transform)
+        }));
+      
+      networkG = networkSvg.append("g");
+
+        let nodes = network.nodes.map(d => Object.create(d));
+        let links = network.edges.map(d => Object.create(d));
+
+        const includeBooks = document.getElementById('egoIncludeBooks')?.checked ?? true;
+
+        if (egoNodeId !== null) {
+          const egoNode = nodes.find(n => n.id === egoNodeId);
+          const neighborIds = new Set();
+          neighborIds.add(egoNodeId);
+
+          links.forEach(l => {
+            const s = l.source;
+            const t = l.target;
+            if (s === egoNodeId || t === egoNodeId) {
+              neighborIds.add(s);
+              neighborIds.add(t);
+            }
+          });
+
+          if (!includeBooks) {
+            const isBookNode = n => (n.type === 'book' || n.node_type === 'book');
+            const keepIds = new Set();
+            neighborIds.forEach(id => {
+              const n = nodes.find(nn => nn.id === id);
+              if (n && !isBookNode(n)) keepIds.add(id);
+            });
+            neighborIds.clear();
+            keepIds.forEach(id => neighborIds.add(id));
+          }
+
+          nodes = nodes.filter(n => neighborIds.has(n.id));
+          links = links.filter(l => neighborIds.has(l.source) && neighborIds.has(l.target));
+        }
+
+      currentNetworkData = { nodes, links };
+      renderNetwork();
+  }
+
+  function renderNetwork() {
+      const { nodes, links } = currentNetworkData;
+      
+      // Color scale for communities
+      const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+      const colorSelect = document.getElementById('colorSelect').value;
+      const centralitySelect = document.getElementById('centralitySelect').value;
+
+      const getColor = d => {
+          if (colorSelect === 'gender') {
+              return ({ 'F': '#e83e8c', 'M': '#0d6efd' }[d.gender] || '#6c757d');
+          } else {
+              return colorScale(d.group || 0);
+          }
+      };
+      
+      const getRadius = d => 4 + Math.log(1 + (Number(d[centralitySelect]) || 1)) * 2.5;
+
+      // Update Legend
+      updateLegend(colorSelect, colorScale);
+
+      networkSimulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(50).strength(0.1))
+        .force("charge", d3.forceManyBody().strength(-100))
+        .force("x", d3.forceX())
+        .force("y", d3.forceY());
+
+      const link = networkG.append("g")
+        .attr("stroke", "#999")
+        .attr("stroke-opacity", 0.5)
+      .selectAll("line")
+      .data(links)
+      .join("line")
+        .attr("stroke-width", d => Math.sqrt(d.weight));
+
+      const node = networkG.append("g")
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 1.5)
+      .selectAll("circle")
+      .data(nodes)
+      .join("circle")
+        .attr("r", getRadius)
+        .attr("fill", getColor)
+        .call(drag(networkSimulation));
+
+      node.append("title")
+        .text(d => `${d.label}\nקהילה: ${d.group}\nספרים ייחודיים: ${d.value}`);
+
+      // Optional labels
+      const showLabelsToggle = document.getElementById('showNetworkLabels');
+      const labelsGroup = networkG.append('g');
+
+      function renderLabels(show) {
+          labelsGroup.selectAll('text').remove();
+          if (!show) return;
+          labelsGroup.selectAll('text')
+              .data(nodes)
+              .join('text')
+              .attr('class', 'network-label')
+              .attr('text-anchor', 'middle')
+              .text(d => d.label);
+      }
+
+      renderLabels(showLabelsToggle && showLabelsToggle.checked);
+
+      if (showLabelsToggle) {
+          // Reset listener
+          const fresh = showLabelsToggle.cloneNode(true);
+          showLabelsToggle.parentNode.replaceChild(fresh, showLabelsToggle);
+          fresh.addEventListener('change', () => {
+              renderLabels(fresh.checked);
+          });
+      }
+
+      networkSimulation.on("tick", () => {
+        link
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+        node
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y);
+
+        labelsGroup.selectAll('text')
+          .attr('x', d => d.x)
+          .attr('y', d => d.y - getRadius(d) - 2);
+      });
+  }
+
+  function updateNetworkViz() {
+      if (!networkG) return;
+      
+      const colorSelect = document.getElementById('colorSelect').value;
+      const centralitySelect = document.getElementById('centralitySelect').value;
+      const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+      const getColor = d => {
+          if (colorSelect === 'gender') {
+              return ({ 'F': '#e83e8c', 'M': '#0d6efd' }[d.gender] || '#6c757d');
+          } else {
+              return colorScale(d.group || 0);
+          }
+      };
+      const getRadius = d => 4 + Math.log(1 + (Number(d[centralitySelect]) || 1)) * 2.5;
+
+      networkG.selectAll("circle")
+          .transition().duration(300)
+          .attr("fill", getColor)
+          .attr("r", getRadius);
+          
+      updateLegend(colorSelect, colorScale);
+  }
+
+  function updateLegend(mode, colorScale) {
+      const container = document.getElementById('legendContainer');
+      container.innerHTML = '';
+      
+      if (mode === 'gender') {
+          container.innerHTML = `
+              <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #0d6efd; border-radius: 50%;"></span> גבר<br>
+              <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #e83e8c; border-radius: 50%;"></span> אישה<br>
+              <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #6c757d; border-radius: 50%;"></span> לא ידוע
+          `;
+      } else {
+          // Show top 5 communities or just a note
+          container.innerHTML = '<small class="text-muted">צבעים שונים מייצגים קהילות שונות שזוהו ע"י האלגוריתם.</small>';
+      }
+  }
+
+  function drag(simulation) {
+      function dragstarted(event) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+      }
+      function dragged(event) {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+      }
+      function dragended(event) {
+        if (!event.active) simulation.alphaTarget(0);
+        event.subject.fx = null;
+        event.subject.fy = null;
+      }
+      return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
+  }
+
+  document.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>
