@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>דשבורד ספריית שטרסון</title>
+
+  <!-- Bootstrap RTL -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+
+  <!-- Leaflet for map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Leaflet, Chart.js, D3, Bootstrap JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <style>
+    body {
+      padding: 1.5rem;
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    .tab-pane {
+      margin-top: 1rem;
+    }
+    #map {
+      height: 500px;
+      border-radius: 0.5rem;
+      border: 1px solid #ccc;
+    }
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin-bottom: 2rem;
+    }
+    .search-result h5 {
+      margin-top: 0.5rem;
+      font-weight: bold;
+    }
+    .search-link {
+      color: #0d6efd;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .network-container {
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+      background-color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <h1>דשבורד ספריית שטרסון</h1>
+    <p class="text-muted">
+      הדשבורד מבוסס על פנקסי ההשאלה של ספריית שטרסון ועל קטלוג הספרים, כפי שעובדו בקובץ האקסל.
+      שים/י לב: כדי שהנתונים ייטענו, הקובץ צריך לרוץ משרת (למשל GitHub Pages או <code>python -m http.server</code>),
+      ולא להיפתח ישירות כקובץ <code>file://</code>.
+    </p>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">
+          חיפוש
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapTab" type="button" role="tab">
+          מפה
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button" role="tab">
+          מדדים כלליים
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="network-tab" data-bs-toggle="tab" data-bs-target="#network" type="button" role="tab">
+          רשת שואלים
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="mainTabsContent">
+      <!-- Search tab -->
+      <div class="tab-pane fade show active" id="search" role="tabpanel" aria-labelledby="search-tab">
+        <div class="row mt-3">
+          <div class="col-md-8">
+            <label for="searchInput" class="form-label">חיפוש לפי שם אדם או שם ספר</label>
+            <input id="searchInput" type="text" class="form-control" placeholder="הקלד/י שם ספר או שם שואל" />
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button id="searchBtn" class="btn btn-primary w-100">חפש/י</button>
+          </div>
+        </div>
+        <div id="searchInfo" class="mt-2 text-muted"></div>
+        <hr />
+        <div id="searchResults"></div>
+      </div>
+
+      <!-- Map tab -->
+      <div class="tab-pane fade" id="mapTab" role="tabpanel" aria-labelledby="map-tab">
+        <p class="mt-3">
+          המפה מציגה את המקומות העיקריים של דפוס/הוצאה לאור לפי קטלוג הספרים. רק חלק מן המקומות ממוקמים גאוגרפית במדויק.
+        </p>
+        <div id="map" class="mt-2"></div>
+      </div>
+
+      <!-- Metrics tab -->
+      <div class="tab-pane fade" id="metrics" role="tabpanel" aria-labelledby="metrics-tab">
+        <div class="row mt-3">
+          <div class="col-lg-6 chart-container">
+            <h5>השואלים המובילים</h5>
+            <canvas id="topBorrowersChart"></canvas>
+          </div>
+          <div class="col-lg-6 chart-container">
+            <h5>הנשים השואלות המובילות</h5>
+            <canvas id="topFemaleBorrowersChart"></canvas>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-6 chart-container">
+            <h5>הספרים הנשאלים ביותר</h5>
+            <canvas id="topBooksChart"></canvas>
+          </div>
+          <div class="col-lg-6 chart-container">
+            <h5>כתבי העת הנשאלים ביותר</h5>
+            <canvas id="topJournalsChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Network tab -->
+      <div class="tab-pane fade" id="network" role="tabpanel" aria-labelledby="network-tab">
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <label for="centralitySelect" class="form-label">מדד מרכזיות להצגת גודל הצמתים</label>
+            <select id="centralitySelect" class="form-select">
+              <option value="value">מספר ספרים ייחודיים</option>
+              <option value="degree">Degree</option>
+              <option value="weightedDegree">Weighted degree (מספר הקשרים הכולל)</option>
+            </select>
+            <p class="mt-3 text-muted">
+              כל צומת מייצג שואל. קשתות מחברות בין שואלים ששאלו אותם ספרים. גודל הצומת נקבע לפי המדד הנבחר.
+            </p>
+          </div>
+          <div class="col-md-8">
+            <div id="networkContainer" class="network-container" style="height: 500px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="loading" class="mt-3 alert alert-info" role="alert">
+      טוען נתונים... (אם ההודעה נשארת, ודא/י שהקבצים JSON נמצאים באותה תיקייה ושנפתח הדף משרת ולא כקובץ מקומי)
+    </div>
+    <div id="errorBox" class="mt-3 alert alert-danger d-none" role="alert"></div>
+  </div>
+
+<script>
+  let allFolders = [];
+  let fullBooks = [];
+  let borrowers = [];
+  let metrics = null;
+  let network = null;
+
+  // Lookups
+  let bookByNli = {};
+  let borrowerByName = {};
+
+  async function loadData() {
+    try {
+      const [
+        allFRes,
+        fullBRes,
+        borRes,
+        metRes,
+        netRes
+      ] = await Promise.all([
+        fetch('all_folders.json'),
+        fetch('full_book_list.json'),
+        fetch('borrowers.json'),
+        fetch('metrics.json'),
+        fetch('network_with_centralities.json')
+      ]);
+
+      if (!allFRes.ok || !fullBRes.ok || !borRes.ok || !metRes.ok || !netRes.ok) {
+        throw new Error('בעיית טעינה של אחד מקובצי ה-JSON');
+      }
+
+      allFolders = await allFRes.json();
+      fullBooks = await fullBRes.json();
+      borrowers = await borRes.json();
+      metrics = await metRes.json();
+      network = await netRes.json();
+
+      buildLookups();
+      initSearch();
+      initMetricsCharts();
+      initMap();
+      initNetwork();
+
+      document.getElementById('loading').classList.add('d-none');
+    } catch (err) {
+      console.error(err);
+      const errorBox = document.getElementById('errorBox');
+      errorBox.textContent = 'שגיאה בטעינת הנתונים: ' + err.message;
+      errorBox.classList.remove('d-none');
+      document.getElementById('loading').classList.add('d-none');
+    }
+  }
+
+  function buildLookups() {
+    bookByNli = {};
+    fullBooks.forEach(b => {
+      const id = (b['nli_id'] || '').trim();
+      if (id) {
+        bookByNli[id] = b;
+      }
+    });
+
+    borrowerByName = {};
+    borrowers.forEach(b => {
+      const name = (b["person's name"] || '').trim();
+      if (name) {
+        borrowerByName[name] = b;
+      }
+    });
+  }
+
+  // ---------- Search ----------
+
+  function initSearch() {
+    const btn = document.getElementById('searchBtn');
+    btn.addEventListener('click', () => {
+      const query = document.getElementById('searchInput').value.trim();
+      runSearch(query);
+    });
+
+    document.getElementById('searchInput').addEventListener('keyup', (ev) => {
+      if (ev.key === 'Enter') {
+        runSearch(ev.target.value.trim());
+      }
+    });
+  }
+
+  function runSearch(query) {
+    const resultsDiv = document.getElementById('searchResults');
+    const infoDiv = document.getElementById('searchInfo');
+    resultsDiv.innerHTML = '';
+    if (!query) {
+      infoDiv.textContent = 'נא להזין טקסט לחיפוש.';
+      return;
+    }
+
+    const lowerQuery = query.toLowerCase();
+
+    const personMatches = new Set();
+    const bookMatches = new Set();
+
+    allFolders.forEach(rec => {
+      const person = (rec["person's name"] || '').trim();
+      const book = (rec["book name"] || '').trim();
+      if (person && person.toLowerCase().includes(lowerQuery)) {
+        personMatches.add(person);
+      }
+      if (book && book.toLowerCase().includes(lowerQuery)) {
+        bookMatches.add(book);
+      }
+    });
+
+    const personsArr = Array.from(personMatches);
+    const booksArr = Array.from(bookMatches);
+
+    if (personsArr.length === 1 && booksArr.length === 0) {
+      showPersonDetails(personsArr[0]);
+      infoDiv.textContent = 'הצגה לפי שואל: ' + personsArr[0];
+      return;
+    }
+    if (booksArr.length === 1 && personsArr.length === 0) {
+      showBookDetails(booksArr[0]);
+      infoDiv.textContent = 'הצגה לפי ספר: ' + booksArr[0];
+      return;
+    }
+
+    infoDiv.textContent =
+      'נמצאו ' + personsArr.length + ' שואלים ו-' + booksArr.length + ' ספרים התואמים לחיפוש. בחר/י פריט מהרשימה.';
+
+    const peopleHtml = personsArr.slice(0, 50).map(name =>
+      '<li><span class="search-link" onclick="showPersonDetails(\'' + escapeHtml(name) + '\')">' + escapeHtml(name) + '</span></li>'
+    ).join('');
+
+    const booksHtml = booksArr.slice(0, 50).map(name =>
+      '<li><span class="search-link" onclick="showBookDetails(\'' + escapeHtml(name) + '\')">' + escapeHtml(name) + '</span></li>'
+    ).join('');
+
+    resultsDiv.innerHTML =
+      '<div class="row">' +
+        '<div class="col-md-6"><h5>שואלים</h5><ul>' + (peopleHtml || '<li>אין תוצאות</li>') + '</ul></div>' +
+        '<div class="col-md-6"><h5>ספרים</h5><ul>' + (booksHtml || '<li>אין תוצאות</li>') + '</ul></div>' +
+      '</div>';
+  }
+
+  function showPersonDetails(name) {
+    const resultsDiv = document.getElementById('searchResults');
+    const cleanName = name.trim();
+    const personLoans = allFolders.filter(rec => (rec["person's name"] || '').trim() === cleanName);
+
+    const borrowerInfo = borrowerByName[cleanName];
+
+    // Aggregate by book
+    const bookCounts = {};
+    personLoans.forEach(rec => {
+      const bn = (rec["book name"] || '').trim();
+      if (!bn) return;
+      bookCounts[bn] = (bookCounts[bn] || 0) + 1;
+    });
+
+    const bookRows = Object.entries(bookCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([bn, count]) => '<tr><td>' + escapeHtml(bn) + '</td><td>' + count + '</td></tr>')
+      .join('');
+
+    const loansRows = personLoans.map(rec => {
+      const bname = escapeHtml((rec["book name"] || '').trim());
+      const year = escapeHtml((rec['year'] || '').toString());
+      const date = escapeHtml((rec['date'] || '').toString());
+      const folder = escapeHtml((rec['Folder'] || '').toString());
+      const nli = escapeHtml((rec['nli_id'] || '').toString());
+      return '<tr>' +
+        '<td>' + bname + '</td>' +
+        '<td>' + year + '</td>' +
+        '<td>' + date + '</td>' +
+        '<td>' + folder + '</td>' +
+        '<td>' + nli + '</td>' +
+      '</tr>';
+    }).join('');
+
+    const cardHtml = borrowerInfo ? (
+      '<div class="card mb-3">' +
+        '<div class="card-body">' +
+          '<h5 class="card-title">' + escapeHtml(cleanName) + '</h5>' +
+          '<p class="card-text mb-1">מגדר: ' + escapeHtml(borrowerInfo['gender'] || '') + '</p>' +
+          '<p class="card-text mb-1">מספר השאלות הכולל: ' + escapeHtml(String(borrowerInfo['number of borrowed books'] || '')) + '</p>' +
+          '<p class="card-text mb-0">מספר ספרים ייחודיים: ' + escapeHtml(String(borrowerInfo['Unique number of borrowed books'] || '')) + '</p>' +
+        '</div>' +
+      '</div>'
+    ) : '';
+
+    resultsDiv.innerHTML =
+      cardHtml +
+      '<div class="row">' +
+        '<div class="col-md-5">' +
+          '<h5>ספרים ששאל/ה</h5>' +
+          '<table class="table table-sm table-striped">' +
+            '<thead><tr><th>שם הספר</th><th>מספר השאלות</th></tr></thead>' +
+            '<tbody>' + (bookRows || '<tr><td colspan="2">אין נתונים</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</div>' +
+        '<div class="col-md-7">' +
+          '<h5>כל רשומות ההשאלה</h5>' +
+          '<table class="table table-sm table-striped">' +
+            '<thead><tr><th>שם הספר</th><th>שנה</th><th>תאריך</th><th>תיקייה</th><th>NLI ID</th></tr></thead>' +
+            '<tbody>' + (loansRows || '<tr><td colspan="5">אין נתונים</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+  }
+  window.showPersonDetails = showPersonDetails; // make global for inline onclick
+
+  function showBookDetails(bookName) {
+    const resultsDiv = document.getElementById('searchResults');
+    const cleanName = bookName.trim();
+
+    const loans = allFolders.filter(rec => (rec["book name"] || '').trim() === cleanName);
+
+    // Try to get book info via nli_id of first matching record
+    let bookInfo = null;
+    for (const rec of loans) {
+      const nli = (rec['nli_id'] || '').trim();
+      if (nli && bookByNli[nli]) {
+        bookInfo = bookByNli[nli];
+        break;
+      }
+    }
+
+    const borrowersCounts = {};
+    loans.forEach(rec => {
+      const p = (rec["person's name"] || '').trim();
+      if (!p) return;
+      borrowersCounts[p] = (borrowersCounts[p] || 0) + 1;
+    });
+
+    const borrowersRows = Object.entries(borrowersCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([p, count]) =>
+        '<tr>' +
+          '<td><span class="search-link" onclick="showPersonDetails(\'' + escapeHtml(p) + '\')">' + escapeHtml(p) + '</span></td>' +
+          '<td>' + count + '</td>' +
+        '</tr>'
+      ).join('');
+
+    const loansRows = loans.map(rec => {
+      const person = escapeHtml((rec["person's name"] || '').trim());
+      const year = escapeHtml((rec['year'] || '').toString());
+      const date = escapeHtml((rec['date'] || '').toString());
+      const folder = escapeHtml((rec['Folder'] || '').toString());
+      return '<tr>' +
+        '<td>' + person + '</td>' +
+        '<td>' + year + '</td>' +
+        '<td>' + date + '</td>' +
+        '<td>' + folder + '</td>' +
+      '</tr>';
+    }).join('');
+
+    let cardHtml = '';
+    if (bookInfo) {
+      const nliId = (bookInfo['nli_id'] || '').trim();
+      const nliTitle = bookInfo['nli_title'] || '';
+      const lang = bookInfo['language_nli'] || '';
+      const publisher = bookInfo['publisher_nli'] || '';
+      const subject = bookInfo['subject - clean'] || bookInfo['subject - nli'] || '';
+      const link = bookInfo['link_to_nli_page'] || '';
+
+      cardHtml =
+        '<div class="card mb-3">' +
+          '<div class="card-body">' +
+            '<h5 class="card-title">' + escapeHtml(cleanName) + '</h5>' +
+            (nliTitle ? '<p class="card-text mb-1">כותר ב-NLI: ' + escapeHtml(nliTitle) + '</p>' : '') +
+            (lang ? '<p class="card-text mb-1">שפה: ' + escapeHtml(lang) + '</p>' : '') +
+            (publisher ? '<p class="card-text mb-1">מקום הוצאה/מו"ל: ' + escapeHtml(publisher) + '</p>' : '') +
+            (subject ? '<p class="card-text mb-1">נושא (קטגוריה): ' + escapeHtml(subject) + '</p>' : '') +
+            (nliId ? '<p class="card-text mb-1">NLI ID: ' + escapeHtml(nliId) + '</p>' : '') +
+            (link ? '<a href="' + escapeHtml(link) + '" target="_blank" class="btn btn-outline-primary btn-sm mt-1">עמוד הספר ב-NLI</a>' : '') +
+          '</div>' +
+        '</div>';
+    }
+
+    resultsDiv.innerHTML =
+      cardHtml +
+      '<div class="row">' +
+        '<div class="col-md-5">' +
+          '<h5>שואלים של הספר</h5>' +
+          '<table class="table table-sm table-striped">' +
+            '<thead><tr><th>שם השואל</th><th>מספר השאלות</th></tr></thead>' +
+            '<tbody>' + (borrowersRows || '<tr><td colspan="2">אין נתונים</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</div>' +
+        '<div class="col-md-7">' +
+          '<h5>כל רשומות ההשאלה</h5>' +
+          '<table class="table table-sm table-striped">' +
+            '<thead><tr><th>שם השואל</th><th>שנה</th><th>תאריך</th><th>תיקייה</th></tr></thead>' +
+            '<tbody>' + (loansRows || '<tr><td colspan="4">אין נתונים</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+  }
+  window.showBookDetails = showBookDetails;
+
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // ---------- Metrics ----------
+
+  function initMetricsCharts() {
+    if (!metrics) return;
+
+    const topBorrowers = metrics.top_borrowers || [];
+    const topFemale = metrics.top_female_borrowers || [];
+    const topBooks = metrics.top_books || [];
+    const topJournals = metrics.top_journals || [];
+
+    function makeBarChart(canvasId, labels, values, label) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: values
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 0 } },
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    makeBarChart(
+      'topBorrowersChart',
+      topBorrowers.map(x => x["person's name"]),
+      topBorrowers.map(x => x["number of borrowed books"]),
+      'מספר השאלות'
+    );
+
+    makeBarChart(
+      'topFemaleBorrowersChart',
+      topFemale.map(x => x["person's name"]),
+      topFemale.map(x => x["number of borrowed books"]),
+      'מספר השאלות'
+    );
+
+    makeBarChart(
+      'topBooksChart',
+      topBooks.map(x => x['book name']),
+      topBooks.map(x => x['count']),
+      'מספר השאלות'
+    );
+
+    makeBarChart(
+      'topJournalsChart',
+      topJournals.map(x => x['book name']),
+      topJournals.map(x => x['count']),
+      'מספר השאלות'
+    );
+  }
+
+  // ---------- Map ----------
+
+  function initMap() {
+    if (!metrics) return;
+
+    const map = L.map('map').setView([54.6872, 25.28], 4); // Center on Eastern Europe
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const placeCounts = (metrics.place_counts || []).filter(p => {
+      if (!p.place) return false;
+      const t = String(p.place).trim().toLowerCase();
+      return t && t !== 'nan';
+    });
+
+    // Manual mapping of main cities to coordinates (approximate)
+    const cityCoords = {
+      'berlin': [52.52, 13.405],
+      'ברלין': [52.52, 13.405],
+      'vilna': [54.6872, 25.28],
+      'vilnius': [54.6872, 25.28],
+      'ווילנא': [54.6872, 25.28],
+      'ווילנע': [54.6872, 25.28],
+      'warsaw': [52.2297, 21.0122],
+      'warszawa': [52.2297, 21.0122],
+      'ווארשא': [52.2297, 21.0122],
+      'ווארשה': [52.2297, 21.0122],
+      'ווארשע': [52.2297, 21.0122],
+      'wien': [48.2082, 16.3738],
+      'wiem': [48.2082, 16.3738],
+      'ווין': [48.2082, 16.3738],
+      'amsterdam': [52.3676, 4.9041],
+      'אמסטרדם': [52.3676, 4.9041],
+      'אמשטירדם': [52.3676, 4.9041],
+      'padova': [45.4064, 11.8768],
+      'padua': [45.4064, 11.8768],
+      'krakau': [50.0647, 19.945],
+      'lemberg': [49.8397, 24.0297],
+      'lwow': [49.8397, 24.0297],
+      'venezia': [45.4408, 12.3155],
+      'venice': [45.4408, 12.3155],
+      'וויניציאה': [45.4408, 12.3155]
+    };
+
+    placeCounts.forEach(p => {
+      const rawPlace = String(p.place).trim();
+      const key = rawPlace.toLowerCase();
+      const coords = cityCoords[key];
+      if (!coords) return;
+
+      const count = p.count || 0;
+      const radius = 5 + Math.log(1 + count) * 3;
+
+      L.circleMarker(coords, {
+        radius: radius,
+        fillColor: '#007bff',
+        color: '#004085',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.6
+      }).addTo(map).bindPopup(
+        '<b>' + escapeHtml(rawPlace) + '</b><br/>מספר הספרים בקטלוג: ' + count
+      );
+    });
+  }
+
+  // ---------- Network ----------
+
+  function initNetwork() {
+    if (!network) return;
+
+    const container = document.getElementById('networkContainer');
+    const width = container.clientWidth || 600;
+    const height = container.clientHeight || 500;
+
+    container.innerHTML = ''; // clear if re-init
+    const svg = d3.select('#networkContainer')
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+    const nodes = network.nodes.map(n => Object.assign({}, n));
+    const links = network.edges.map(e => Object.assign({}, e));
+
+    const colorByGender = gender => {
+      if (gender === 'F') return '#e83e8c';
+      if (gender === 'M') return '#0d6efd';
+      return '#6c757d';
+    };
+
+    const centralitySelect = document.getElementById('centralitySelect');
+
+    function getRadius(d) {
+      const metric = centralitySelect.value;
+      const base = Number(d[metric]) || 1;
+      return 4 + Math.log(1 + base) * 3;
+    }
+
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(60).strength(0.2))
+      .force('charge', d3.forceManyBody().strength(-80))
+      .force('center', d3.forceCenter(width / 2, height / 2));
+
+    const link = svg.append('g')
+      .attr('stroke', '#999')
+      .attr('stroke-opacity', 0.6)
+      .selectAll('line')
+      .data(links)
+      .enter()
+      .append('line')
+      .attr('stroke-width', d => Math.log(1 + (d.weight || 1)));
+
+    const node = svg.append('g')
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 1.5)
+      .selectAll('circle')
+      .data(nodes)
+      .enter()
+      .append('circle')
+      .attr('r', d => getRadius(d))
+      .attr('fill', d => colorByGender(d.gender))
+      .call(d3.drag()
+        .on('start', dragStarted)
+        .on('drag', dragged)
+        .on('end', dragEnded));
+
+    const label = svg.append('g')
+      .selectAll('text')
+      .data(nodes)
+      .enter()
+      .append('text')
+      .attr('font-size', '10px')
+      .attr('dx', 8)
+      .attr('dy', '0.35em')
+      .text(d => d.label);
+
+    node.append('title')
+      .text(d => d.label + '\nספרים ייחודיים: ' + d.value + '\nDegree: ' + d.degree + '\nWeighted degree: ' + d.weightedDegree);
+
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      node
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y);
+
+      label
+        .attr('x', d => d.x)
+        .attr('y', d => d.y);
+    });
+
+    centralitySelect.addEventListener('change', () => {
+      node.attr('r', d => getRadius(d));
+    });
+
+    function dragStarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragEnded(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>
