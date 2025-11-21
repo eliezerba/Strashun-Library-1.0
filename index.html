@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title> ספריית שטרסון</title>
+  <title>ספריית שטרסון</title>
 
-  <!-- Bootstrap RTL -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+  <!-- Bootstrap RTL + LTR (toggle per language) -->
+  <link id="bootstrapRTL" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+  <link id="bootstrapLTR" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" disabled>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Leaflet for map -->
@@ -57,7 +58,7 @@
         border-color: var(--bs-primary);
         background-color: transparent;
     }
-    
+
     .card {
         box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         border: none;
@@ -115,7 +116,7 @@
     #searchResults table {
         font-size: 0.9rem;
     }
-    
+
     .autocomplete-items {
       position: absolute;
       border: 1px solid #d4d4d4;
@@ -130,57 +131,82 @@
     .autocomplete-items div {
       padding: 10px;
       cursor: pointer;
-      background-color: #fff; 
-      border-bottom: 1px solid #d4d4d4; 
+      background-color: #fff;
+      border-bottom: 1px solid #d4d4d4;
     }
     .autocomplete-items div:hover {
-      background-color: #e9e9e9; 
+      background-color: #e9e9e9;
     }
     .autocomplete-active {
-      background-color: DodgerBlue !important; 
-      color: #ffffff; 
+      background-color: DodgerBlue !important;
+      color: #ffffff;
+    }
+
+    .range-slider {
+      position: relative;
+      height: 2rem;
+    }
+    .range-slider input[type=range] {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      width: 100%;
+      background: transparent;
+      pointer-events: none;
+    }
+    .range-slider input[type=range]::-webkit-slider-thumb {
+      pointer-events: all;
+    }
+    .range-slider input[type=range]::-moz-range-thumb {
+      pointer-events: all;
     }
   </style>
 </head>
 <body>
-    <div class="container-fluid py-4">
+  <div class="container-fluid py-4">
     <header class="main-header text-center">
       <div class="d-flex justify-content-between align-items-center flex-wrap">
         <div class="text-start">
           <img src="logo.png" alt="לוגו המעבדה" style="height:64px; max-width:180px; object-fit:contain;">
         </div>
         <div class="flex-grow-1 text-center mt-3 mt-md-0">
-          <h1 class="mb-1"> ספריית שטרסון</h1>
-          <p class="lead mb-0">
+          <h1 class="mb-1" data-i18n="appTitle">ספריית שטרסון</h1>
+          <p class="lead mb-0" data-i18n="appSubtitle">
             ניתוח ויזואלי של פנקסי ההשאלה וקטלוג הספרים ההיסטורי - מעבדת אליהו - אוניבררסיטת חיפה
           </p>
         </div>
-        <div class="d-none d-md-block" style="width:180px;"></div>
+        <div class="d-flex align-items-center justify-content-end mt-3 mt-md-0" style="min-width: 180px;">
+          <div class="btn-group" role="group" aria-label="Language switcher">
+            <button type="button" class="btn btn-light btn-sm active" id="langHe" data-lang="he">עברית</button>
+            <button type="button" class="btn btn-outline-light btn-sm" id="langEn" data-lang="en">English</button>
+          </div>
+        </div>
       </div>
     </header>
-    
+
     <!-- Tabs -->
     <div class="card">
         <div class="card-header bg-light">
             <ul class="nav nav-tabs card-header-tabs" id="mainTabs" role="tablist">
               <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">
-                  <i class="bi bi-search"></i> חיפוש
+                <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab" data-i18n="tabSearch">
+                  חיפוש
                 </button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapTab" type="button" role="tab">
-                  <i class="bi bi-map"></i> מפת הוצאה לאור
+                <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapTab" type="button" role="tab" data-i18n="tabMap">
+                  מפת הוצאה לאור
                 </button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button" role="tab">
-                  <i class="bi bi-bar-chart-line"></i> מדדים כלליים
+                <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button" role="tab" data-i18n="tabMetrics">
+                  מדדים כלליים
                 </button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="network-tab" data-bs-toggle="tab" data-bs-target="#network" type="button" role="tab">
-                  <i class="bi bi-diagram-3"></i> רשת קוראים
+                <button class="nav-link" id="network-tab" data-bs-toggle="tab" data-bs-target="#network" type="button" role="tab" data-i18n="tabNetwork">
+                  רשת קוראים
                 </button>
               </li>
             </ul>
@@ -193,39 +219,57 @@
                   <div class="col-md-6">
                     <div class="input-group" style="position: relative;">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input id="searchInput" type="text" class="form-control" placeholder="הקלד/י שם ספר או שם שואל..." autocomplete="off"/>
+                        <input id="searchInput" type="text" class="form-control" placeholder="הקלד/י שם ספר או שם שואל..." autocomplete="off" data-i18n-placeholder="searchPlaceholder"/>
                         <div id="autocomplete-list" class="autocomplete-items"></div>
                     </div>
                   </div>
                   <div class="col-md-6">
-                    <button id="searchBtn" class="btn btn-primary w-100">חפש/י</button>
+                    <button id="searchBtn" class="btn btn-primary w-100" data-i18n="searchButton">חפש/י</button>
                   </div>
                 </div>
                 <div class="row g-3 mt-2">
                     <div class="col-md-4">
-                        <label class="form-label">סינון לפי מגדר:</label>
+                        <label class="form-label" data-i18n="genderFilterLabel">סינון לפי מגדר:</label>
                         <div class="btn-group w-100">
                             <input type="radio" class="btn-check" name="genderFilter" id="genderAll" value="all" checked>
-                            <label class="btn btn-outline-secondary" for="genderAll">הכל</label>
+                            <label class="btn btn-outline-secondary" for="genderAll" data-i18n="genderAll">הכל</label>
                             <input type="radio" class="btn-check" name="genderFilter" id="genderM" value="M">
-                            <label class="btn btn-outline-secondary" for="genderM">גברים</label>
+                            <label class="btn btn-outline-secondary" for="genderM" data-i18n="genderM">גברים</label>
                             <input type="radio" class="btn-check" name="genderFilter" id="genderF" value="F">
-                            <label class="btn btn-outline-secondary" for="genderF">נשים</label>
+                            <label class="btn btn-outline-secondary" for="genderF" data-i18n="genderF">נשים</label>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <label for="yearFilter" class="form-label">סינון לפי שנה:</label>
-                        <input type="text" id="yearFilter" class="form-control" placeholder="לדוגמה: 1930-1940 או 1955">
+                        <label for="yearStartRange" class="form-label" data-i18n="yearFilterLabel">ציר זמן (שנים):</label>
+                        <div class="card p-3">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="text-muted" data-i18n="yearRangeCaption">בחר/י טווח שנים</small>
+                            <button class="btn btn-sm btn-outline-secondary" id="resetYearRange" type="button" data-i18n="yearRangeReset">איפוס</button>
+                          </div>
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge text-bg-light" id="yearRangeStartLabel">—</span>
+                            <span class="small text-muted" id="yearRangeSummary" data-i18n="yearRangeAll">כל השנים</span>
+                            <span class="badge text-bg-light" id="yearRangeEndLabel">—</span>
+                          </div>
+                          <div class="d-flex align-items-center">
+                            <small class="text-muted" id="yearRangeMinText">—</small>
+                            <div class="flex-grow-1 mx-2 range-slider">
+                              <input type="range" class="form-range" id="yearStartRange" min="0" max="0" value="0">
+                              <input type="range" class="form-range" id="yearEndRange" min="0" max="0" value="0">
+                            </div>
+                            <small class="text-muted" id="yearRangeMaxText">—</small>
+                          </div>
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">סינון לפי סוג ספר:</label>
+                        <label class="form-label" data-i18n="bookTypeFilterLabel">סינון לפי סוג ספר:</label>
                         <div class="btn-group w-100">
                             <input type="radio" class="btn-check" name="bookTypeFilter" id="bookTypeAll" value="all" checked>
-                            <label class="btn btn-outline-secondary" for="bookTypeAll">הכל</label>
+                            <label class="btn btn-outline-secondary" for="bookTypeAll" data-i18n="bookTypeAll">הכל</label>
                             <input type="radio" class="btn-check" name="bookTypeFilter" id="bookTypeBook" value="book">
-                            <label class="btn btn-outline-secondary" for="bookTypeBook">ספרים</label>
+                            <label class="btn btn-outline-secondary" for="bookTypeBook" data-i18n="bookTypeBook">ספרים</label>
                              <input type="radio" class="btn-check" name="bookTypeFilter" id="bookTypeJournal" value="journal">
-                            <label class="btn btn-outline-secondary" for="bookTypeJournal">כתבי עת</label>
+                            <label class="btn btn-outline-secondary" for="bookTypeJournal" data-i18n="bookTypeJournal">כתבי עת</label>
                         </div>
                     </div>
                 </div>
@@ -236,7 +280,7 @@
 
               <!-- Map tab -->
               <div class="tab-pane fade" id="mapTab" role="tabpanel" aria-labelledby="map-tab">
-                <p class="text-muted">
+                <p class="text-muted" data-i18n="mapDescription">
                   המפה מציגה את המקומות העיקריים של דפוס/הוצאה לאור לפי קטלוג הספרים. רק חלק מן המקומות ממוקמים גאוגרפית במדויק.
                 </p>
                 <div class="card">
@@ -250,7 +294,7 @@
                   <div class="col-lg-6 mb-4">
                     <div class="card h-100">
                         <div class="card-body chart-container">
-                            <h5 class="card-title text-center">השואלים המובילים</h5>
+                            <h5 class="card-title text-center" data-i18n="topBorrowersTitle">השואלים המובילים</h5>
                             <canvas id="topBorrowersChart"></canvas>
                         </div>
                     </div>
@@ -258,7 +302,7 @@
                   <div class="col-lg-6 mb-4">
                     <div class="card h-100">
                         <div class="card-body chart-container">
-                            <h5 class="card-title text-center">הנשים השואלות המובילות</h5>
+                            <h5 class="card-title text-center" data-i18n="topFemaleBorrowersTitle">הנשים השואלות המובילות</h5>
                             <canvas id="topFemaleBorrowersChart"></canvas>
                         </div>
                     </div>
@@ -266,7 +310,7 @@
                   <div class="col-lg-6 mb-4">
                     <div class="card h-100">
                         <div class="card-body chart-container">
-                            <h5 class="card-title text-center">הספרים הנשאלים ביותר</h5>
+                            <h5 class="card-title text-center" data-i18n="topBooksTitle">הספרים הנשאלים ביותר</h5>
                             <canvas id="topBooksChart"></canvas>
                         </div>
                     </div>
@@ -274,7 +318,7 @@
                   <div class="col-lg-6 mb-4">
                     <div class="card h-100">
                         <div class="card-body chart-container">
-                            <h5 class="card-title text-center">כתבי העת הנשאלים ביותר</h5>
+                            <h5 class="card-title text-center" data-i18n="topJournalsTitle">כתבי העת הנשאלים ביותר</h5>
                             <canvas id="topJournalsChart"></canvas>
                         </div>
                     </div>
@@ -288,34 +332,39 @@
                   <div class="col-md-3">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">הגדרות תצוגה</h5>
-                            
-                            <label for="colorSelect" class="form-label">צביעה לפי:</label>
+                            <h5 class="card-title" data-i18n="networkSettings">הגדרות תצוגה</h5>
+
+                            <label for="colorSelect" class="form-label" data-i18n="colorBy">צביעה לפי:</label>
                             <select id="colorSelect" class="form-select mb-3">
-                              <option value="gender">מגדר</option>
-                              <option value="community">קהילה (Community)</option>
+                              <option value="gender" data-i18n="colorGender">מגדר</option>
+                              <option value="community" data-i18n="colorCommunity">קהילה (Community)</option>
                             </select>
 
-                            <label for="centralitySelect" class="form-label">גודל (מדד מרכזיות):</label>
+                            <label for="communityFilter" class="form-label" data-i18n="communityFilterLabel">צפייה בקהילה:</label>
+                            <select id="communityFilter" class="form-select mb-3">
+                              <option value="all" data-i18n="communityFilterAll">כל הקהילות</option>
+                            </select>
+
+                            <label for="centralitySelect" class="form-label" data-i18n="centralityLabel">גודל (מדד מרכזיות):</label>
                             <select id="centralitySelect" class="form-select mb-3">
-                              <option value="value">מספר ספרים ייחודיים</option>
-                              <option value="degree">Degree</option>
-                              <option value="weightedDegree">Weighted degree</option>
+                              <option value="value" data-i18n="centralityValue">מספר ספרים ייחודיים</option>
+                              <option value="degree" data-i18n="centralityDegree">Degree</option>
+                              <option value="weightedDegree" data-i18n="centralityWeighted">Weighted degree</option>
                             </select>
 
                             <div class="form-check form-switch mb-2">
                               <input class="form-check-input" type="checkbox" id="egoIncludeBooks" checked>
-                              <label class="form-check-label" for="egoIncludeBooks">הצג גם ספרים ברשת אגו</label>
+                              <label class="form-check-label" for="egoIncludeBooks" data-i18n="egoIncludeBooks">הצג גם ספרים ברשת אגו</label>
                             </div>
                             <div class="form-check form-switch mb-3">
                               <input class="form-check-input" type="checkbox" id="showNetworkLabels">
-                              <label class="form-check-label" for="showNetworkLabels">הצג שמות על הרשת</label>
+                              <label class="form-check-label" for="showNetworkLabels" data-i18n="showNetworkLabels">הצג שמות על הרשת</label>
                             </div>
-                            
+
                             <hr>
-                            <h6 class="card-subtitle mb-2 text-muted">רשת אגו</h6>
+                            <h6 class="card-subtitle mb-2 text-muted" data-i18n="egoNetworkTitle">רשת אגו</h6>
                             <div class="input-group mb-3">
-                               <input type="text" id="networkSearchInput" class="form-control" placeholder="חפש שם..." autocomplete="off">
+                               <input type="text" id="networkSearchInput" class="form-control" placeholder="חפש שם..." autocomplete="off" data-i18n-placeholder="networkSearchPlaceholder">
                                <button class="btn btn-outline-secondary" type="button" id="resetNetworkBtn"><i class="bi bi-x-lg"></i></button>
                             </div>
                             <div id="networkAutocomplete" class="autocomplete-items" style="position:relative; top:0;"></div>
@@ -334,30 +383,290 @@
         </div>
     </div>
 
-    <div id="loading" class="mt-3 alert alert-info" role="alert">
-      טוען נתונים...
-    </div>
+    <div id="loading" class="mt-3 alert alert-info" role="alert">טוען נתונים...</div>
     <div id="errorBox" class="mt-3 alert alert-danger d-none" role="alert"></div>
   </div>
 
 <script>
+  const translations = {
+    he: {
+      appTitle: 'ספריית שטרסון',
+      appSubtitle: 'ניתוח ויזואלי של פנקסי ההשאלה וקטלוג הספרים ההיסטורי - מעבדת אליהו - אוניבררסיטת חיפה',
+      tabSearch: 'חיפוש',
+      tabMap: 'מפת הוצאה לאור',
+      tabMetrics: 'מדדים כלליים',
+      tabNetwork: 'רשת קוראים',
+      searchPlaceholder: 'הקלד/י שם ספר או שם שואל...',
+      searchButton: 'חפש/י',
+      genderFilterLabel: 'סינון לפי מגדר:',
+      genderAll: 'הכל',
+      genderM: 'גברים',
+      genderF: 'נשים',
+      yearFilterLabel: 'ציר זמן (שנים):',
+      yearRangeCaption: 'בחר/י טווח שנים',
+      yearRangeReset: 'איפוס',
+      yearRangeAll: 'כל השנים',
+      bookTypeFilterLabel: 'סינון לפי סוג ספר:',
+      bookTypeAll: 'הכל',
+      bookTypeBook: 'ספרים',
+      bookTypeJournal: 'כתבי עת',
+      searchResultsInfo: 'נמצאו {borrowers} שואלים ו-{books} ספרים. בחר/י פריט מהרשימה להצגת פרטים.',
+      searchResultsPerson: 'מציג פרטים עבור: {name}',
+      searchResultsBook: 'מציג פרטים עבור: {name}',
+      noResults: 'אין תוצאות',
+      borrowersHeader: 'שואלים ({count})',
+      booksHeader: 'ספרים ({count})',
+      borrowerGender: 'מגדר:',
+      borrowerTotalLoans: 'סך השאלות:',
+      borrowerUniqueBooks: 'ספרים ייחודיים:',
+      borrowerBooks: 'ספרים ששאל/ה',
+      borrowerBooksTitle: 'שם הספר',
+      borrowerBooksLoans: 'השאלות',
+      borrowerLoans: 'כל רשומות ההשאלה',
+      borrowerLoansBook: 'שם הספר',
+      borrowerLoansYear: 'שנה',
+      borrowerLoansDate: 'תאריך',
+      borrowerLoansFolder: 'תיקייה',
+      borrowerLoansNli: 'NLI ID',
+      noData: 'אין נתונים',
+      bookInfoMissing: 'לא נמצא מידע נוסף על ספר זה בקטלוג.',
+      bookBorrowers: 'שואלים של הספר',
+      bookBorrowersName: 'שם השואל',
+      bookBorrowersLoans: 'השאלות',
+      bookLoans: 'כל רשומות ההשאלה',
+      bookLoansName: 'שם השואל',
+      bookLoansYear: 'שנה',
+      bookLoansDate: 'תאריך',
+      bookLoansFolder: 'תיקייה',
+      bookCardNliTitle: 'כותר ב-NLI:',
+      bookCardLanguage: 'שפה:',
+      bookCardPublisher: 'מקום הוצאה/מו"ל:',
+      bookCardSubject: 'נושא:',
+      bookCardNliId: 'NLI ID:',
+      bookCardLink: 'עמוד הספר בספרייה הלאומית <i class="bi bi-box-arrow-up-right"></i>',
+      mapDescription: 'המפה מציגה את המקומות העיקריים של דפוס/הוצאה לאור לפי קטלוג הספרים. רק חלק מן המקומות ממוקמים גאוגרפית במדויק.',
+      mapPopupTitleCount: 'מספר כותרים',
+      topBorrowersTitle: 'השואלים המובילים',
+      topFemaleBorrowersTitle: 'הנשים השואלות המובילות',
+      topBooksTitle: 'הספרים הנשאלים ביותר',
+      topJournalsTitle: 'כתבי העת הנשאלים ביותר',
+      chartBorrowCount: 'מספר השאלות',
+      networkSettings: 'הגדרות תצוגה',
+      colorBy: 'צביעה לפי:',
+      colorGender: 'מגדר',
+      colorCommunity: 'קהילה (Community)',
+      communityFilterLabel: 'צפייה בקהילה:',
+      communityFilterAll: 'כל הקהילות',
+      centralityLabel: 'גודל (מדד מרכזיות):',
+      centralityValue: 'מספר ספרים ייחודיים',
+      centralityDegree: 'Degree',
+      centralityWeighted: 'Weighted degree',
+      egoIncludeBooks: 'הצג גם ספרים ברשת אגו',
+      showNetworkLabels: 'הצג שמות על הרשת',
+      egoNetworkTitle: 'רשת אגו',
+      networkSearchPlaceholder: 'חפש שם...',
+      legendMale: 'גבר',
+      legendFemale: 'אישה',
+      legendUnknown: 'לא ידוע',
+      legendCommunitiesNote: 'צבעים שונים מייצגים קהילות שונות שזוהו ע"י האלגוריתם.',
+      networkTooltip: 'קהילה: {community}\nספרים ייחודיים: {unique}',
+      loading: 'טוען נתונים...',
+      errorPrefix: 'שגיאה בטעינת הנתונים: ',
+      dataMissing: 'נתונים לא נמצאו. ודא שקובץ data.js קיים ונטען בהצלחה.',
+      mapTabTitle: 'מפת הוצאה לאור',
+      borrowerGenderUnknown: 'לא ידוע'
+    },
+    en: {
+      appTitle: 'Strashun Library',
+      appSubtitle: 'Visual analysis of the historical loan registries and catalog - Eliahu Lab - University of Haifa',
+      tabSearch: 'Search',
+      tabMap: 'Publishing map',
+      tabMetrics: 'Overall metrics',
+      tabNetwork: 'Readers network',
+      searchPlaceholder: 'Type a book or borrower name...',
+      searchButton: 'Search',
+      genderFilterLabel: 'Filter by gender:',
+      genderAll: 'All',
+      genderM: 'Men',
+      genderF: 'Women',
+      yearFilterLabel: 'Timeline (years):',
+      yearRangeCaption: 'Select a year range',
+      yearRangeReset: 'Reset',
+      yearRangeAll: 'All years',
+      bookTypeFilterLabel: 'Filter by material type:',
+      bookTypeAll: 'All',
+      bookTypeBook: 'Books',
+      bookTypeJournal: 'Journals',
+      searchResultsInfo: 'Found {borrowers} borrowers and {books} books. Select an item to view details.',
+      searchResultsPerson: 'Showing details for: {name}',
+      searchResultsBook: 'Showing details for: {name}',
+      noResults: 'No results',
+      borrowersHeader: 'Borrowers ({count})',
+      booksHeader: 'Books ({count})',
+      borrowerGender: 'Gender:',
+      borrowerTotalLoans: 'Total loans:',
+      borrowerUniqueBooks: 'Unique books:',
+      borrowerBooks: 'Books borrowed',
+      borrowerBooksTitle: 'Title',
+      borrowerBooksLoans: 'Loans',
+      borrowerLoans: 'All loan records',
+      borrowerLoansBook: 'Title',
+      borrowerLoansYear: 'Year',
+      borrowerLoansDate: 'Date',
+      borrowerLoansFolder: 'Folder',
+      borrowerLoansNli: 'NLI ID',
+      noData: 'No data',
+      bookInfoMissing: 'No additional catalog information was found for this title.',
+      bookBorrowers: 'Borrowers of the book',
+      bookBorrowersName: 'Borrower name',
+      bookBorrowersLoans: 'Loans',
+      bookLoans: 'All loan records',
+      bookLoansName: 'Borrower name',
+      bookLoansYear: 'Year',
+      bookLoansDate: 'Date',
+      bookLoansFolder: 'Folder',
+      bookCardNliTitle: 'NLI title:',
+      bookCardLanguage: 'Language:',
+      bookCardPublisher: 'Place/Publisher:',
+      bookCardSubject: 'Subject:',
+      bookCardNliId: 'NLI ID:',
+      bookCardLink: 'Book page in the National Library <i class="bi bi-box-arrow-up-right"></i>',
+      mapDescription: 'The map shows the main printing/publishing locations by the catalog. Only some places are geocoded precisely.',
+      mapPopupTitleCount: 'Title count',
+      topBorrowersTitle: 'Top borrowers',
+      topFemaleBorrowersTitle: 'Top female borrowers',
+      topBooksTitle: 'Most borrowed books',
+      topJournalsTitle: 'Most borrowed journals',
+      chartBorrowCount: 'Number of loans',
+      networkSettings: 'Display settings',
+      colorBy: 'Color by:',
+      colorGender: 'Gender',
+      colorCommunity: 'Community',
+      communityFilterLabel: 'View community:',
+      communityFilterAll: 'All communities',
+      centralityLabel: 'Size (centrality metric):',
+      centralityValue: 'Number of unique books',
+      centralityDegree: 'Degree',
+      centralityWeighted: 'Weighted degree',
+      egoIncludeBooks: 'Include books in ego network',
+      showNetworkLabels: 'Show labels on the network',
+      egoNetworkTitle: 'Ego network',
+      networkSearchPlaceholder: 'Search a name...',
+      legendMale: 'Male',
+      legendFemale: 'Female',
+      legendUnknown: 'Unknown',
+      legendCommunitiesNote: 'Different colors mark communities detected by the algorithm.',
+      networkTooltip: 'Community: {community}\nUnique books: {unique}',
+      loading: 'Loading data...',
+      errorPrefix: 'Error loading data: ',
+      dataMissing: 'Data was not found. Make sure data.js is available and loaded.',
+      mapTabTitle: 'Publishing map',
+      borrowerGenderUnknown: 'Unknown'
+    }
+  };
+
+  let currentLang = 'he';
+  const storedLang = localStorage.getItem('dashboardLang');
+  if (storedLang && translations[storedLang]) {
+    currentLang = storedLang;
+  }
   let allFolders = [];
   let fullBooks = [];
   let borrowers = [];
   let metrics = null;
   let network = null;
   let mapInstance = null;
+  let metricsCharts = [];
+  let lastSearchQuery = '';
+  let minYear = null;
+  let maxYear = null;
 
   // Lookups
   let bookByNli = {};
   let borrowerByName = {};
   let uniquePersonNames = [];
   let uniqueBookNames = [];
+  function t(key, vars = {}) {
+    const dict = translations[currentLang] || translations.he;
+    const fallback = translations.he || {};
+    let template = dict[key] || fallback[key] || key;
+    Object.entries(vars).forEach(([k, v]) => {
+      template = template.replace(`{${k}}`, v);
+    });
+    return template;
+  }
+
+  function applyTranslations() {
+    document.documentElement.lang = currentLang === 'he' ? 'he' : 'en';
+    document.documentElement.dir = currentLang === 'he' ? 'rtl' : 'ltr';
+
+    const rtlLink = document.getElementById('bootstrapRTL');
+    const ltrLink = document.getElementById('bootstrapLTR');
+    if (rtlLink && ltrLink) {
+      rtlLink.disabled = currentLang !== 'he';
+      ltrLink.disabled = currentLang === 'he';
+    }
+
+    document.getElementById('langHe').classList.toggle('btn-light', currentLang === 'he');
+    document.getElementById('langHe').classList.toggle('btn-outline-light', currentLang !== 'he');
+    document.getElementById('langHe').classList.toggle('active', currentLang === 'he');
+    document.getElementById('langEn').classList.toggle('btn-light', currentLang === 'en');
+    document.getElementById('langEn').classList.toggle('btn-outline-light', currentLang !== 'en');
+    document.getElementById('langEn').classList.toggle('active', currentLang === 'en');
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.innerHTML = t(el.getAttribute('data-i18n'));
+    });
+
+    document.title = t('appTitle');
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+    });
+
+    document.getElementById('searchBtn').textContent = t('searchButton');
+    document.getElementById('loading').textContent = t('loading');
+
+    const errorBox = document.getElementById('errorBox');
+    if (!errorBox.classList.contains('d-none') && errorBox.dataset.errorMessage) {
+      errorBox.textContent = t('errorPrefix') + errorBox.dataset.errorMessage;
+    }
+
+    if (metrics) {
+      initMetricsCharts();
+      initMap();
+    }
+    if (network) {
+      populateCommunityOptions(document.getElementById('communityFilter'), true);
+      updateNetworkData(null, true);
+    }
+
+    const startInput = document.getElementById('yearStartRange');
+    const endInput = document.getElementById('yearEndRange');
+    if (startInput && endInput && minYear !== null && maxYear !== null) {
+      updateYearRangeLabels(parseInt(startInput.value, 10), parseInt(endInput.value, 10));
+    }
+
+    runSearch(lastSearchQuery);
+  }
+
+  function setupLanguageSwitcher() {
+    document.querySelectorAll('[data-lang]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lang = btn.getAttribute('data-lang');
+        if (lang && translations[lang]) {
+          currentLang = lang;
+          localStorage.setItem('dashboardLang', lang);
+          applyTranslations();
+        }
+      });
+    });
+  }
 
   async function loadData() {
     try {
       if (!window.dashboardData) {
-         throw new Error('נתונים לא נמצאו. ודא שקובץ data.js קיים ונטען בהצלחה.');
+         throw new Error(t('dataMissing'));
       }
 
       allFolders = window.dashboardData.allFolders || [];
@@ -371,22 +680,20 @@
       initMetricsCharts();
       initMap();
       initNetwork();
+      initYearTimeline();
 
-      // Re-render network when tab is shown to fix sizing issues
       const networkTabEl = document.querySelector('button[data-bs-target="#network"]');
       if (networkTabEl) {
-        networkTabEl.addEventListener('shown.bs.tab', function (event) {
-            // If network hasn't been drawn or size is wrong, redraw
+        networkTabEl.addEventListener('shown.bs.tab', function () {
             if (networkG) {
-                updateNetworkData(null); // Redraw to fit container
+                updateNetworkData(null, true);
             }
         });
       }
 
-        // Re-render map when tab is shown to fix sizing issues
-        const mapTabEl = document.querySelector('button[data-bs-target="#mapTab"]');
+      const mapTabEl = document.querySelector('button[data-bs-target="#mapTab"]');
       if (mapTabEl) {
-        mapTabEl.addEventListener('shown.bs.tab', function (event) {
+        mapTabEl.addEventListener('shown.bs.tab', function () {
             if (mapInstance) {
                 mapInstance.invalidateSize();
             }
@@ -394,10 +701,12 @@
       }
 
       document.getElementById('loading').classList.add('d-none');
+      applyTranslations();
     } catch (err) {
       console.error(err);
       const errorBox = document.getElementById('errorBox');
-      errorBox.textContent = 'שגיאה בטעינת הנתונים: ' + err.message;
+      errorBox.dataset.errorMessage = err.message;
+      errorBox.textContent = t('errorPrefix') + err.message;
       errorBox.classList.remove('d-none');
       document.getElementById('loading').classList.add('d-none');
     }
@@ -422,7 +731,7 @@
         personNames.add(name);
       }
     });
-    
+
     allFolders.forEach(rec => {
         const bookName = (rec["book name"] || "").trim();
         if(bookName) bookNames.add(bookName);
@@ -432,12 +741,94 @@
     uniqueBookNames = Array.from(bookNames);
   }
 
-  // ---------- Search ----------
+  function computeYearBounds() {
+    const years = allFolders
+      .map(rec => parseInt(rec['year'], 10))
+      .filter(y => Number.isFinite(y));
 
+    if (years.length) {
+      minYear = Math.min(...years);
+      maxYear = Math.max(...years);
+    } else {
+      const currentYear = new Date().getFullYear();
+      minYear = currentYear;
+      maxYear = currentYear;
+    }
+  }
+
+  function updateYearRangeLabels(startVal, endVal) {
+    if (!Number.isFinite(startVal)) startVal = minYear;
+    if (!Number.isFinite(endVal)) endVal = maxYear;
+
+    const startLabel = document.getElementById('yearRangeStartLabel');
+    const endLabel = document.getElementById('yearRangeEndLabel');
+    const summary = document.getElementById('yearRangeSummary');
+    const minText = document.getElementById('yearRangeMinText');
+    const maxText = document.getElementById('yearRangeMaxText');
+
+    if (startLabel) startLabel.textContent = startVal || startVal === 0 ? startVal : '—';
+    if (endLabel) endLabel.textContent = endVal || endVal === 0 ? endVal : '—';
+    if (minText) minText.textContent = minYear || minYear === 0 ? minYear : '—';
+    if (maxText) maxText.textContent = maxYear || maxYear === 0 ? maxYear : '—';
+    if (summary) summary.textContent = (startVal <= minYear && endVal >= maxYear) ? t('yearRangeAll') : `${startVal} - ${endVal}`;
+  }
+
+  function initYearTimeline() {
+    const startInput = document.getElementById('yearStartRange');
+    const endInput = document.getElementById('yearEndRange');
+    const resetBtn = document.getElementById('resetYearRange');
+    if (!startInput || !endInput) return;
+
+    computeYearBounds();
+
+    startInput.min = endInput.min = minYear;
+    startInput.max = endInput.max = maxYear;
+    startInput.value = minYear;
+    endInput.value = maxYear;
+
+    const handleChange = (event) => {
+      let startVal = parseInt(startInput.value, 10);
+      let endVal = parseInt(endInput.value, 10);
+
+      if (startVal > endVal) {
+        if (event && event.target === startInput) {
+          endVal = startVal;
+          endInput.value = endVal;
+        } else {
+          startVal = endVal;
+          startInput.value = startVal;
+        }
+      }
+
+      updateYearRangeLabels(startVal, endVal);
+
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        runSearch(searchInput.value.trim());
+      }
+    };
+
+    startInput.addEventListener('input', handleChange);
+    endInput.addEventListener('input', handleChange);
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        startInput.value = minYear;
+        endInput.value = maxYear;
+        updateYearRangeLabels(minYear, maxYear);
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          runSearch(searchInput.value.trim());
+        }
+      });
+    }
+
+    updateYearRangeLabels(minYear, maxYear);
+  }
   function initSearch() {
     const btn = document.getElementById('searchBtn');
     const searchInput = document.getElementById('searchInput');
-    
+
     btn.addEventListener('click', () => {
       runSearch(searchInput.value.trim());
     });
@@ -447,32 +838,31 @@
         runSearch(ev.target.value.trim());
       }
     });
-    
+
     initAutocomplete(searchInput);
-    
-    // Add event listeners to filters
-    document.querySelectorAll('input[name="genderFilter"], input[name="bookTypeFilter"], #yearFilter').forEach(el => {
+
+    document.querySelectorAll('input[name="genderFilter"], input[name="bookTypeFilter"]').forEach(el => {
         el.addEventListener('change', () => runSearch(searchInput.value.trim()));
     });
   }
 
   function runSearch(query) {
+    lastSearchQuery = query || '';
     const resultsDiv = document.getElementById('searchResults');
     const infoDiv = document.getElementById('searchInfo');
     resultsDiv.innerHTML = '';
-    
+
     const lowerQuery = query.toLowerCase();
-    
-    // Get filter values
+
     const genderFilter = document.querySelector('input[name="genderFilter"]:checked').value;
-    const yearFilter = document.getElementById('yearFilter').value.trim();
+    const yearStartInput = document.getElementById('yearStartRange');
+    const yearEndInput = document.getElementById('yearEndRange');
     const bookTypeFilter = document.querySelector('input[name="bookTypeFilter"]:checked').value;
 
     let [yearStart, yearEnd] = [null, null];
-    if (yearFilter.includes('-')) {
-        [yearStart, yearEnd] = yearFilter.split('-').map(y => parseInt(y.trim(), 10));
-    } else if (yearFilter) {
-        yearStart = yearEnd = parseInt(yearFilter, 10);
+    if (yearStartInput && yearEndInput) {
+      yearStart = parseInt(yearStartInput.value, 10);
+      yearEnd = parseInt(yearEndInput.value, 10);
     }
 
     const personMatches = new Set();
@@ -484,7 +874,7 @@
       const year = parseInt(rec['year'], 10);
 
       let yearMatch = true;
-      if (yearStart && yearEnd && !isNaN(year)) {
+      if (Number.isFinite(yearStart) && Number.isFinite(yearEnd) && !isNaN(year)) {
           yearMatch = year >= yearStart && year <= yearEnd;
       }
 
@@ -494,7 +884,7 @@
             personMatches.add(person);
           }
       }
-      
+
       if (book && yearMatch && (!query || book.toLowerCase().includes(lowerQuery))) {
           const isJournal = (book.toLowerCase().includes('כרך') || book.toLowerCase().includes('חוברת'));
           if (bookTypeFilter === 'all' || (bookTypeFilter === 'journal' && isJournal) || (bookTypeFilter === 'book' && !isJournal)) {
@@ -508,20 +898,20 @@
 
     if (personsArr.length === 1 && booksArr.length === 0 && query) {
       showPersonDetails(personsArr[0]);
-      infoDiv.textContent = `מציג פרטים עבור: ${personsArr[0]}`;
+      infoDiv.textContent = t('searchResultsPerson', { name: personsArr[0] });
       return;
     }
     if (booksArr.length === 1 && personsArr.length === 0 && query) {
       showBookDetails(booksArr[0]);
-      infoDiv.textContent = `מציג פרטים עבור: ${booksArr[0]}`;
+      infoDiv.textContent = t('searchResultsBook', { name: booksArr[0] });
       return;
     }
 
     infoDiv.textContent =
-      `נמצאו ${personsArr.length} שואלים ו-${booksArr.length} ספרים. בחר/י פריט מהרשימה להצגת פרטים.`;
+      t('searchResultsInfo', { borrowers: personsArr.length, books: booksArr.length });
 
     const createList = (items, handler) => {
-        if (items.length === 0) return '<li class="list-group-item">אין תוצאות</li>';
+        if (items.length === 0) return `<li class="list-group-item">${t('noResults')}</li>`;
         return items.slice(0, 100).map(name =>
             `<li class="list-group-item list-group-item-action" style="cursor:pointer;" onclick="${handler}('${escapeHtml(name)}')">${escapeHtml(name)}</li>`
         ).join('');
@@ -531,19 +921,24 @@
       <div class="row">
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header fw-bold">שואלים (${personsArr.length})</div>
+                <div class="card-header fw-bold">${t('borrowersHeader', { count: personsArr.length })}</div>
                 <ul class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">${createList(personsArr, 'showPersonDetails')}</ul>
             </div>
         </div>
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header fw-bold">ספרים (${booksArr.length})</div>
+                <div class="card-header fw-bold">${t('booksHeader', { count: booksArr.length })}</div>
                 <ul class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">${createList(booksArr, 'showBookDetails')}</ul>
             </div>
         </div>
       </div>`;
   }
 
+  function formatGender(value) {
+    if (value === 'M') return t('genderM');
+    if (value === 'F') return t('genderF');
+    return t('borrowerGenderUnknown');
+  }
   function showPersonDetails(name) {
     const resultsDiv = document.getElementById('searchResults');
     const cleanName = name.trim();
@@ -577,9 +972,9 @@
         <div class="card-body">
           <h4 class="card-title">${escapeHtml(cleanName)}</h4>
           <div class="row">
-            <div class="col-md-4"><strong>מגדר:</strong> ${escapeHtml(borrowerInfo['gender'] || 'לא ידוע')}</div>
-            <div class="col-md-4"><strong>סך השאלות:</strong> ${escapeHtml(String(borrowerInfo['number of borrowed books'] || '0'))}</div>
-            <div class="col-md-4"><strong>ספרים ייחודיים:</strong> ${escapeHtml(String(borrowerInfo['Unique number of borrowed books'] || '0'))}</div>
+            <div class="col-md-4"><strong>${t('borrowerGender')}</strong> ${escapeHtml(formatGender(borrowerInfo['gender']))}</div>
+            <div class="col-md-4"><strong>${t('borrowerTotalLoans')}</strong> ${escapeHtml(String(borrowerInfo['number of borrowed books'] || '0'))}</div>
+            <div class="col-md-4"><strong>${t('borrowerUniqueBooks')}</strong> ${escapeHtml(String(borrowerInfo['Unique number of borrowed books'] || '0'))}</div>
           </div>
         </div>
       </div>` : '';
@@ -589,22 +984,22 @@
       <div class="row">
         <div class="col-md-5">
           <div class="card">
-            <div class="card-header"><h5>ספרים ששאל/ה</h5></div>
+            <div class="card-header"><h5>${t('borrowerBooks')}</h5></div>
             <div class="card-body" style="max-height: 400px; overflow-y: auto;">
               <table class="table table-sm table-hover">
-                <thead><tr><th>שם הספר</th><th>השאלות</th></tr></thead>
-                <tbody>${bookRows || '<tr><td colspan="2">אין נתונים</td></tr>'}</tbody>
+                <thead><tr><th>${t('borrowerBooksTitle')}</th><th>${t('borrowerBooksLoans')}</th></tr></thead>
+                <tbody>${bookRows || `<tr><td colspan="2">${t('noData')}</td></tr>`}</tbody>
               </table>
             </div>
           </div>
         </div>
         <div class="col-md-7">
           <div class="card">
-            <div class="card-header"><h5>כל רשומות ההשאלה</h5></div>
+            <div class="card-header"><h5>${t('borrowerLoans')}</h5></div>
             <div class="card-body" style="max-height: 400px; overflow-y: auto;">
               <table class="table table-sm table-hover">
-                <thead><tr><th>שם הספר</th><th>שנה</th><th>תאריך</th><th>תיקייה</th><th>NLI ID</th></tr></thead>
-                <tbody>${loansRows || '<tr><td colspan="5">אין נתונים</td></tr>'}</tbody>
+                <thead><tr><th>${t('borrowerLoansBook')}</th><th>${t('borrowerLoansYear')}</th><th>${t('borrowerLoansDate')}</th><th>${t('borrowerLoansFolder')}</th><th>${t('borrowerLoansNli')}</th></tr></thead>
+                <tbody>${loansRows || `<tr><td colspan="5">${t('noData')}</td></tr>`}</tbody>
               </table>
             </div>
           </div>
@@ -635,8 +1030,9 @@
       .map(([p, count]) => `<tr>
           <td><span class="search-link" onclick="showPersonDetails('${escapeHtml(p)}')">${escapeHtml(p)}</span></td>
           <td>${count}</td>
-        </tr>`
-      ).join('');
+        </tr>
+      `)
+      .join('');
 
     const loansRows = loans.map(rec => {
       const person = escapeHtml((rec["person's name"] || '').trim());
@@ -665,18 +1061,18 @@
         <div class="card mb-4">
           <div class="card-body">
             <h4 class="card-title">${escapeHtml(cleanName)}</h4>
-            ${nliTitle ? `<p class="card-text mb-1"><strong>כותר ב-NLI:</strong> ${escapeHtml(nliTitle)}</p>` : ''}
+            ${nliTitle ? `<p class="card-text mb-1"><strong>${t('bookCardNliTitle')}</strong> ${escapeHtml(nliTitle)}</p>` : ''}
             <div class="row mt-2">
-                ${lang ? `<div class="col-md-4"><strong>שפה:</strong> ${escapeHtml(lang)}</div>` : ''}
-                ${publisher ? `<div class="col-md-8"><strong>מקום הוצאה/מו"ל:</strong> ${escapeHtml(publisher)}</div>` : ''}
-                ${subject ? `<div class="col-md-8 mt-1"><strong>נושא:</strong> ${escapeHtml(subject)}</div>` : ''}
-                ${nliId ? `<div class="col-md-4 mt-1"><strong>NLI ID:</strong> ${escapeHtml(nliId.trim())}</div>` : ''}
+                ${lang ? `<div class="col-md-4"><strong>${t('bookCardLanguage')}</strong> ${escapeHtml(lang)}</div>` : ''}
+                ${publisher ? `<div class="col-md-8"><strong>${t('bookCardPublisher')}</strong> ${escapeHtml(publisher)}</div>` : ''}
+                ${subject ? `<div class="col-md-8 mt-1"><strong>${t('bookCardSubject')}</strong> ${escapeHtml(subject)}</div>` : ''}
+                ${nliId ? `<div class="col-md-4 mt-1"><strong>${t('bookCardNliId')}</strong> ${escapeHtml(nliId.trim())}</div>` : ''}
             </div>
-            ${link ? `<a href="${escapeHtml(link)}" target="_blank" class="btn btn-outline-primary btn-sm mt-3">עמוד הספר בספרייה הלאומית <i class="bi bi-box-arrow-up-right"></i></a>` : ''}
+            ${link ? `<a href="${escapeHtml(link)}" target="_blank" class="btn btn-outline-primary btn-sm mt-3">${t('bookCardLink')}</a>` : ''}
           </div>
         </div>`;
     } else {
-         cardHtml = `<div class="card mb-4"><div class="card-body"><h4 class="card-title">${escapeHtml(cleanName)}</h4><p class="text-muted">לא נמצא מידע נוסף על ספר זה בקטלוג.</p></div></div>`;
+         cardHtml = `<div class="card mb-4"><div class="card-body"><h4 class="card-title">${escapeHtml(cleanName)}</h4><p class="text-muted">${t('bookInfoMissing')}</p></div></div>`;
     }
 
     resultsDiv.innerHTML = `
@@ -684,22 +1080,22 @@
       <div class="row">
         <div class="col-md-5">
           <div class="card">
-            <div class="card-header"><h5>שואלים של הספר</h5></div>
+            <div class="card-header"><h5>${t('bookBorrowers')}</h5></div>
             <div class="card-body" style="max-height: 400px; overflow-y: auto;">
               <table class="table table-sm table-hover">
-                <thead><tr><th>שם השואל</th><th>השאלות</th></tr></thead>
-                <tbody>${borrowersRows || '<tr><td colspan="2">אין נתונים</td></tr>'}</tbody>
+                <thead><tr><th>${t('bookBorrowersName')}</th><th>${t('bookBorrowersLoans')}</th></tr></thead>
+                <tbody>${borrowersRows || `<tr><td colspan="2">${t('noData')}</td></tr>`}</tbody>
               </table>
             </div>
           </div>
         </div>
         <div class="col-md-7">
           <div class="card">
-            <div class="card-header"><h5>כל רשומות ההשאלה</h5></div>
+            <div class="card-header"><h5>${t('bookLoans')}</h5></div>
             <div class="card-body" style="max-height: 400px; overflow-y: auto;">
               <table class="table table-sm table-hover">
-                <thead><tr><th>שם השואל</th><th>שנה</th><th>תאריך</th><th>תיקייה</th></tr></thead>
-                <tbody>${loansRows || '<tr><td colspan="4">אין נתונים</td></tr>'}</tbody>
+                <thead><tr><th>${t('bookLoansName')}</th><th>${t('bookLoansYear')}</th><th>${t('bookLoansDate')}</th><th>${t('bookLoansFolder')}</th></tr></thead>
+                <tbody>${loansRows || `<tr><td colspan="4">${t('noData')}</td></tr>`}</tbody>
               </table>
             </div>
           </div>
@@ -707,7 +1103,6 @@
       </div>`;
   }
   window.showBookDetails = showBookDetails;
-
   function escapeHtml(text) {
     if (typeof text !== 'string') return '';
     return text
@@ -717,16 +1112,16 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
-  
+
   function initAutocomplete(inp) {
       let currentFocus;
       inp.addEventListener("input", function(e) {
-          let a, b, i, val = this.value;
+          let a, b, val = this.value;
           closeAllLists();
           if (!val || val.length < 2) { return false;}
           currentFocus = -1;
           a = document.getElementById("autocomplete-list");
-          
+
           const combined = [...uniquePersonNames, ...uniqueBookNames];
           const filtered = combined.filter(item => item.toLowerCase().includes(val.toLowerCase())).slice(0, 10);
 
@@ -735,7 +1130,7 @@
               b.innerHTML = "<strong>" + item.substr(0, val.length) + "</strong>";
               b.innerHTML += item.substr(val.length);
               b.innerHTML += "<input type='hidden' value='" + escapeHtml(item) + "'>";
-              b.addEventListener("click", function(e) {
+              b.addEventListener("click", function() {
                   inp.value = this.getElementsByTagName("input")[0].value;
                   closeAllLists();
                   runSearch(inp.value);
@@ -743,7 +1138,7 @@
               a.appendChild(b);
           });
       });
-      
+
       function closeAllLists(elmnt) {
           const x = document.getElementsByClassName("autocomplete-items");
           for (let i = 0; i < x.length; i++) {
@@ -757,10 +1152,11 @@
       });
   }
 
-  // ---------- Metrics ----------
-
   function initMetricsCharts() {
     if (!metrics) return;
+
+    metricsCharts.forEach(chart => chart.destroy());
+    metricsCharts = [];
 
     const chartOptions = {
         responsive: true,
@@ -774,16 +1170,16 @@
             }
         },
         scales: {
-            x: { 
-                ticks: { 
-                    autoSkip: false, 
-                    maxRotation: 45, 
+            x: {
+                ticks: {
+                    autoSkip: false,
+                    maxRotation: 45,
                     minRotation: 45,
                     font: { size: 10 }
                 },
                 grid: { display: false }
             },
-            y: { 
+            y: {
                 beginAtZero: true,
                 grid: { color: '#e9ecef' }
             }
@@ -795,7 +1191,7 @@
 
     const createBarChart = (canvasId, data, labelKey, valueKey, chartLabel, color) => {
         const ctx = document.getElementById(canvasId).getContext('2d');
-        new Chart(ctx, {
+        const chart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: data.map(item => item[labelKey]),
@@ -809,23 +1205,21 @@
             },
             options: chartOptions
         });
+        metricsCharts.push(chart);
     };
 
-    createBarChart('topBorrowersChart', metrics.top_borrowers || [], "person's name", "number of borrowed books", 'מספר השאלות', 'rgba(86, 128, 233, 0.7)');
-    createBarChart('topFemaleBorrowersChart', metrics.top_female_borrowers || [], "person's name", "number of borrowed books", 'מספר השאלות', 'rgba(232, 62, 140, 0.7)');
-    createBarChart('topBooksChart', metrics.top_books || [], 'book name', 'count', 'מספר השאלות', 'rgba(25, 135, 84, 0.7)');
-    createBarChart('topJournalsChart', metrics.top_journals || [], 'book name', 'count', 'מספר השאלות', 'rgba(255, 193, 7, 0.7)');
+    createBarChart('topBorrowersChart', metrics.top_borrowers || [], "person's name", "number of borrowed books", t('chartBorrowCount'), 'rgba(86, 128, 233, 0.7)');
+    createBarChart('topFemaleBorrowersChart', metrics.top_female_borrowers || [], "person's name", "number of borrowed books", t('chartBorrowCount'), 'rgba(232, 62, 140, 0.7)');
+    createBarChart('topBooksChart', metrics.top_books || [], 'book name', 'count', t('chartBorrowCount'), 'rgba(25, 135, 84, 0.7)');
+    createBarChart('topJournalsChart', metrics.top_journals || [], 'book name', 'count', t('chartBorrowCount'), 'rgba(255, 193, 7, 0.7)');
   }
-
-  // ---------- Map ----------
 
   function initMap() {
     if (!metrics || !document.getElementById('map')) return;
     if (mapInstance) mapInstance.remove();
 
-    mapInstance = L.map('map').setView([51.5, 24], 4); // Centered on Eastern Europe
+    mapInstance = L.map('map').setView([51.5, 24], 4);
 
-    // Simple, openly available OSM tiles for offline-friendly use
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
       minZoom: 2,
@@ -849,7 +1243,6 @@
       'paris': [48.8566, 2.3522], 'פריז': [48.8566, 2.3522],
       'london': [51.5074, -0.1278], 'לונדון': [51.5074, -0.1278]
     };
-
     const markers = L.markerClusterGroup();
 
     placeCounts.forEach(p => {
@@ -860,29 +1253,46 @@
 
       const count = p.count || 0;
       const marker = L.marker(coords);
-      marker.bindPopup(`<b>${escapeHtml(rawPlace)}</b><br/>מספר כותרים: ${count}`);
+      marker.bindPopup(`<b>${escapeHtml(rawPlace)}</b><br/>${t('mapPopupTitleCount')}: ${count}`);
       markers.addLayer(marker);
     });
     mapInstance.addLayer(markers);
   }
-
-  // ---------- Network ----------
 
   let networkSimulation = null;
   let networkSvg = null;
   let networkG = null;
   let currentNetworkData = { nodes: [], links: [] };
 
+  function populateCommunityOptions(selectEl, keepSelection = true) {
+    if (!selectEl || !network || !network.nodes) return;
+
+    const previous = selectEl.value;
+    const communitySet = new Set();
+    network.nodes.forEach(n => {
+      const group = n.group;
+      if (group !== undefined && group !== null && String(group).trim() !== '') {
+        communitySet.add(String(group));
+      }
+    });
+
+    const options = Array.from(communitySet).sort((a, b) => a.localeCompare(b));
+    selectEl.innerHTML = `<option value="all">${t('communityFilterAll')}</option>` + options.map(opt => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('');
+
+    if (keepSelection && previous && (options.includes(previous) || previous === 'all')) {
+      selectEl.value = previous;
+    }
+  }
+
   function initNetwork() {
     if (!network) return;
 
-    // Setup controls listeners
     const colorSelect = document.getElementById('colorSelect');
     const centralitySelect = document.getElementById('centralitySelect');
+    const communitySelect = document.getElementById('communityFilter');
     const searchInput = document.getElementById('networkSearchInput');
     const resetBtn = document.getElementById('resetNetworkBtn');
 
-    // Remove old listeners to avoid duplicates if init called multiple times
     const newColorSelect = colorSelect.cloneNode(true);
     colorSelect.parentNode.replaceChild(newColorSelect, colorSelect);
     newColorSelect.addEventListener('change', () => updateNetworkViz());
@@ -891,6 +1301,11 @@
     centralitySelect.parentNode.replaceChild(newCentralitySelect, centralitySelect);
     newCentralitySelect.addEventListener('change', () => updateNetworkViz());
 
+    const newCommunitySelect = communitySelect.cloneNode(true);
+    communitySelect.parentNode.replaceChild(newCommunitySelect, communitySelect);
+    populateCommunityOptions(newCommunitySelect, false);
+    newCommunitySelect.addEventListener('change', () => updateNetworkData(null));
+
     const newResetBtn = resetBtn.cloneNode(true);
     resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
     newResetBtn.addEventListener('click', () => {
@@ -898,10 +1313,8 @@
         updateNetworkData(null);
     });
 
-    // Network Autocomplete (ego options: people / books / both)
     initNetworkAutocomplete(searchInput);
 
-    // Initial Draw
     updateNetworkData(null);
   }
 
@@ -913,130 +1326,139 @@
         if (!val) { return false;}
         currentFocus = -1;
         a = document.getElementById("networkAutocomplete");
-          
+
         const filtered = network.nodes
           .filter(n => (n.label || '').toLowerCase().includes(val.toLowerCase()))
-          .slice(0, 12);
+          .slice(0, 20);
 
         filtered.forEach(item => {
           b = document.createElement("DIV");
           b.innerHTML = "<strong>" + item.label.substr(0, val.length) + "</strong>";
           b.innerHTML += item.label.substr(val.length);
-          b.innerHTML += "<input type='hidden' value='" + escapeHtml(item.label) + "'>";
-          b.addEventListener("click", function(e) {
-            inp.value = this.getElementsByTagName("input")[0].value;
+          b.innerHTML += "<input type='hidden' value='" + escapeHtml(item.id) + "'>";
+          b.addEventListener("click", function() {
+            inp.value = item.label;
             closeAllLists();
             updateNetworkData(item.id);
           });
           a.appendChild(b);
         });
       });
-      
+
       function closeAllLists(elmnt) {
-        const x = document.getElementById("networkAutocomplete");
-        if (elmnt != x && elmnt != inp) {
-          x.innerHTML = "";
+        const x = document.getElementsByClassName("autocomplete-items");
+        for (let i = 0; i < x.length; i++) {
+          if (elmnt != x[i] && elmnt != inp) {
+            x[i].innerHTML = "";
+          }
         }
       }
-      document.addEventListener("click", function (e) {
+
+      document.addEventListener("click", function(e) {
         closeAllLists(e.target);
       });
     }
+  function updateNetworkData(focusId = null, preservePosition = false) {
+    if (!network || !network.nodes || !network.links) return;
 
-  function updateNetworkData(egoNodeId) {
-      const container = document.getElementById('networkContainer');
-      const width = container.clientWidth || 800;
-      const height = container.clientHeight || 600;
+    const includeBooks = document.getElementById('egoIncludeBooks').checked;
+    let filteredNodes = network.nodes;
+    let filteredLinks = network.links;
 
-      container.innerHTML = ''; 
-      
-      networkSvg = d3.select('#networkContainer')
-        .append('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .attr('viewBox', [-width / 2, -height / 2, width, height])
-        .call(d3.zoom().on("zoom", function (event) {
-           networkG.attr("transform", event.transform)
-        }));
-      
-      networkG = networkSvg.append("g");
+    const communitySelect = document.getElementById('communityFilter');
+    const communityValue = communitySelect ? communitySelect.value : 'all';
+    if (communityValue && communityValue !== 'all') {
+      const allowedIds = new Set(network.nodes.filter(n => String(n.group) === communityValue).map(n => n.id));
+      filteredNodes = filteredNodes.filter(n => allowedIds.has(n.id));
+      filteredLinks = filteredLinks.filter(l => allowedIds.has(l.source) && allowedIds.has(l.target));
 
-        let nodes = network.nodes.map(d => Object.create(d));
-        let links = network.edges.map(d => Object.create(d));
+      if (focusId && !allowedIds.has(focusId)) {
+        focusId = null;
+      }
+    }
 
-        const includeBooks = document.getElementById('egoIncludeBooks')?.checked ?? true;
-
-        if (egoNodeId !== null) {
-          const egoNode = nodes.find(n => n.id === egoNodeId);
-          const neighborIds = new Set();
-          neighborIds.add(egoNodeId);
-
-          links.forEach(l => {
-            const s = l.source;
-            const t = l.target;
-            if (s === egoNodeId || t === egoNodeId) {
-              neighborIds.add(s);
-              neighborIds.add(t);
+    if (focusId) {
+      const egoLinks = filteredLinks.filter(l => l.source === focusId || l.target === focusId);
+      const nodeIds = new Set();
+      egoLinks.forEach(l => {
+        nodeIds.add(l.source);
+        nodeIds.add(l.target);
+      });
+      if (!includeBooks) {
+        const focusNode = filteredNodes.find(n => n.id === focusId);
+        const isPerson = focusNode && focusNode.type === 'person';
+        if (isPerson) {
+          egoLinks.forEach(l => {
+            const otherId = l.source === focusId ? l.target : l.source;
+            const otherNode = filteredNodes.find(n => n.id === otherId);
+            if (otherNode && otherNode.type === 'book') {
+              nodeIds.delete(otherNode.id);
             }
           });
-
-          if (!includeBooks) {
-            const isBookNode = n => (n.type === 'book' || n.node_type === 'book');
-            const keepIds = new Set();
-            neighborIds.forEach(id => {
-              const n = nodes.find(nn => nn.id === id);
-              if (n && !isBookNode(n)) keepIds.add(id);
-            });
-            neighborIds.clear();
-            keepIds.forEach(id => neighborIds.add(id));
-          }
-
-          nodes = nodes.filter(n => neighborIds.has(n.id));
-          links = links.filter(l => neighborIds.has(l.source) && neighborIds.has(l.target));
         }
+      }
+      filteredNodes = filteredNodes.filter(n => nodeIds.has(n.id));
+      filteredLinks = filteredLinks.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    }
 
-      currentNetworkData = { nodes, links };
-      renderNetwork();
+    drawNetwork(filteredNodes, filteredLinks, preservePosition);
   }
 
-  function renderNetwork() {
-      const { nodes, links } = currentNetworkData;
-      
-      // Color scale for communities
-      const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-      const colorSelect = document.getElementById('colorSelect').value;
-      const centralitySelect = document.getElementById('centralitySelect').value;
+  function drawNetwork(nodes, links, preservePosition = false) {
+    const container = document.getElementById('networkContainer');
+    container.innerHTML = '';
 
-      const getColor = d => {
-          if (colorSelect === 'gender') {
-              return ({ 'F': '#e83e8c', 'M': '#0d6efd' }[d.gender] || '#6c757d');
-          } else {
-              return colorScale(d.group || 0);
-          }
-      };
-      
-      const getRadius = d => 4 + Math.log(1 + (Number(d[centralitySelect]) || 1)) * 2.5;
+    const width = container.clientWidth || 800;
+    const height = container.clientHeight || 600;
 
-      // Update Legend
-      updateLegend(colorSelect, colorScale);
+    networkSvg = d3.select(container)
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
 
-      networkSimulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(50).strength(0.1))
-        .force("charge", d3.forceManyBody().strength(-100))
-        .force("x", d3.forceX())
-        .force("y", d3.forceY());
+    networkG = networkSvg.append("g");
 
-      const link = networkG.append("g")
-        .attr("stroke", "#999")
-        .attr("stroke-opacity", 0.5)
+    const link = networkG.append("g")
+      .attr("stroke", "#999")
+      .attr("stroke-opacity", 0.6)
       .selectAll("line")
       .data(links)
       .join("line")
         .attr("stroke-width", d => Math.sqrt(d.weight));
 
-      const node = networkG.append("g")
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 1.5)
+    const colorSelect = document.getElementById('colorSelect').value;
+    const centralitySelect = document.getElementById('centralitySelect').value;
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+    const getColor = d => {
+        if (colorSelect === 'gender') {
+            return ({ 'F': '#e83e8c', 'M': '#0d6efd' }[d.gender] || '#6c757d');
+        } else {
+            return colorScale(d.group || 0);
+        }
+    };
+    const getRadius = d => 4 + Math.log(1 + (Number(d[centralitySelect]) || 1)) * 2.5;
+
+    networkSimulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(d => d.id).distance(50))
+      .force("charge", d3.forceManyBody().strength(-50))
+      .force("center", d3.forceCenter(width / 2, height / 2));
+
+    if (preservePosition && currentNetworkData.nodes.length) {
+      nodes.forEach(n => {
+        const existing = currentNetworkData.nodes.find(o => o.id === n.id);
+        if (existing) {
+          n.x = existing.x;
+          n.y = existing.y;
+        }
+      });
+    }
+
+    currentNetworkData = { nodes, links };
+
+    const node = networkG.append("g")
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1.5)
       .selectAll("circle")
       .data(nodes)
       .join("circle")
@@ -1044,54 +1466,54 @@
         .attr("fill", getColor)
         .call(drag(networkSimulation));
 
-      node.append("title")
-        .text(d => `${d.label}\nקהילה: ${d.group}\nספרים ייחודיים: ${d.value}`);
+    node.append("title")
+      .text(d => `${d.label}\n${t('networkTooltip', { community: d.group || t('legendUnknown'), unique: d.value || 0 })}`);
 
-      // Optional labels
-      const showLabelsToggle = document.getElementById('showNetworkLabels');
-      const labelsGroup = networkG.append('g');
+    const showLabelsToggle = document.getElementById('showNetworkLabels');
+    const labelsGroup = networkG.append('g');
 
-      function renderLabels(show) {
-          labelsGroup.selectAll('text').remove();
-          if (!show) return;
-          labelsGroup.selectAll('text')
-              .data(nodes)
-              .join('text')
-              .attr('class', 'network-label')
-              .attr('text-anchor', 'middle')
-              .text(d => d.label);
-      }
-
-      renderLabels(showLabelsToggle && showLabelsToggle.checked);
-
-      if (showLabelsToggle) {
-          // Reset listener
-          const fresh = showLabelsToggle.cloneNode(true);
-          showLabelsToggle.parentNode.replaceChild(fresh, showLabelsToggle);
-          fresh.addEventListener('change', () => {
-              renderLabels(fresh.checked);
-          });
-      }
-
-      networkSimulation.on("tick", () => {
-        link
-            .attr("x1", d => d.source.x)
-            .attr("y1", d => d.source.y)
-            .attr("x2", d => d.target.x)
-            .attr("y2", d => d.target.y);
-        node
-          .attr("cx", d => d.x)
-          .attr("cy", d => d.y);
-
+    function renderLabels(show) {
+        labelsGroup.selectAll('text').remove();
+        if (!show) return;
         labelsGroup.selectAll('text')
-          .attr('x', d => d.x)
-          .attr('y', d => d.y - getRadius(d) - 2);
-      });
+            .data(nodes)
+            .join('text')
+            .attr('class', 'network-label')
+            .attr('text-anchor', 'middle')
+            .text(d => d.label);
+    }
+
+    renderLabels(showLabelsToggle && showLabelsToggle.checked);
+
+    if (showLabelsToggle) {
+        const fresh = showLabelsToggle.cloneNode(true);
+        showLabelsToggle.parentNode.replaceChild(fresh, showLabelsToggle);
+        fresh.addEventListener('change', () => {
+            renderLabels(fresh.checked);
+        });
+    }
+
+    networkSimulation.on("tick", () => {
+      link
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+      node
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y);
+
+      labelsGroup.selectAll('text')
+        .attr('x', d => d.x)
+        .attr('y', d => d.y - getRadius(d) - 2);
+    });
+
+    updateLegend(colorSelect, colorScale);
   }
 
   function updateNetworkViz() {
       if (!networkG) return;
-      
+
       const colorSelect = document.getElementById('colorSelect').value;
       const centralitySelect = document.getElementById('centralitySelect').value;
       const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
@@ -1109,23 +1531,22 @@
           .transition().duration(300)
           .attr("fill", getColor)
           .attr("r", getRadius);
-          
+
       updateLegend(colorSelect, colorScale);
   }
 
   function updateLegend(mode, colorScale) {
       const container = document.getElementById('legendContainer');
       container.innerHTML = '';
-      
+
       if (mode === 'gender') {
           container.innerHTML = `
-              <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #0d6efd; border-radius: 50%;"></span> גבר<br>
-              <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #e83e8c; border-radius: 50%;"></span> אישה<br>
-              <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #6c757d; border-radius: 50%;"></span> לא ידוע
+              <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #0d6efd; border-radius: 50%;"></span> ${t('legendMale')}<br>
+              <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #e83e8c; border-radius: 50%;"></span> ${t('legendFemale')}<br>
+              <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: #6c757d; border-radius: 50%;"></span> ${t('legendUnknown')}
           `;
       } else {
-          // Show top 5 communities or just a note
-          container.innerHTML = '<small class="text-muted">צבעים שונים מייצגים קהילות שונות שזוהו ע"י האלגוריתם.</small>';
+          container.innerHTML = `<small class="text-muted">${t('legendCommunitiesNote')}</small>`;
       }
   }
 
@@ -1147,7 +1568,10 @@
       return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
   }
 
-  document.addEventListener('DOMContentLoaded', loadData);
+  document.addEventListener('DOMContentLoaded', () => {
+    setupLanguageSwitcher();
+    loadData();
+  });
 </script>
 </body>
 </html>
