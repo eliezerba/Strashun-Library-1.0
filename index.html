@@ -686,16 +686,17 @@
       if (networkTabEl) {
         networkTabEl.addEventListener('shown.bs.tab', function () {
             // Always update network data when tab is shown, drawing if needed
-            updateNetworkData(null, networkG ? true : false);
+            updateNetworkData(null, !!networkG);
         });
         
         // Fallback: Also add click listener in case Bootstrap events don't fire
+        const TAB_SWITCH_DELAY = 100; // ms to wait for tab transition
         networkTabEl.addEventListener('click', function () {
             setTimeout(() => {
                 if (!networkG && network) {
                     updateNetworkData(null, false);
                 }
-            }, 100);
+            }, TAB_SWITCH_DELAY);
         });
       }
 
