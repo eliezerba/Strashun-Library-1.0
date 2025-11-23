@@ -690,9 +690,11 @@
         });
         
         // Fallback: Also add click listener in case Bootstrap events don't fire
-        const TAB_SWITCH_DELAY = 100; // ms to wait for tab transition
+        // Wait 100ms to allow tab transition to complete before checking if network needs to be drawn
+        const TAB_SWITCH_DELAY = 100;
         networkTabEl.addEventListener('click', function () {
             setTimeout(() => {
+                // Check if network data exists but visualization hasn't been created yet
                 if (!networkG && network) {
                     updateNetworkData(null, false);
                 }
