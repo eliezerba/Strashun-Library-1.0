@@ -685,9 +685,20 @@
       const networkTabEl = document.querySelector('button[data-bs-target="#network"]');
       if (networkTabEl) {
         networkTabEl.addEventListener('shown.bs.tab', function () {
-            if (networkG) {
-                updateNetworkData(null, true);
-            }
+            // Always update network data when tab is shown, drawing if needed
+            updateNetworkData(null, !!networkG);
+        });
+        
+        // Fallback: Also add click listener in case Bootstrap events don't fire
+        // Wait 100ms to allow tab transition to complete before checking if network needs to be drawn
+        const TAB_SWITCH_DELAY = 100;
+        networkTabEl.addEventListener('click', function () {
+            setTimeout(() => {
+                // Check if network data exists but visualization hasn't been created yet
+                if (!networkG && network) {
+                    updateNetworkData(null, false);
+                }
+            }, TAB_SWITCH_DELAY);
         });
       }
 
@@ -1315,7 +1326,8 @@
 
     initNetworkAutocomplete(searchInput);
 
-    updateNetworkData(null);
+    // Don't draw network initially - wait until tab is shown
+    // updateNetworkData(null);
   }
 
     function initNetworkAutocomplete(inp) {
@@ -1406,10 +1418,19 @@
 
   function drawNetwork(nodes, links, preservePosition = false) {
     const container = document.getElementById('networkContainer');
+    if (!container) return;
+    
     container.innerHTML = '';
 
-    const width = container.clientWidth || 800;
-    const height = container.clientHeight || 600;
+    // Ensure container has dimensions (check if tab is visible)
+    let width = container.clientWidth;
+    let height = container.clientHeight;
+    
+    // If container is hidden (width/height = 0), use fallback or wait
+    if (width === 0 || height === 0) {
+      width = 800;
+      height = 600;
+    }
 
     networkSvg = d3.select(container)
       .append("svg")
